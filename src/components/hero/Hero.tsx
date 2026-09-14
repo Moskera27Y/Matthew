@@ -4,7 +4,7 @@
 import { motion } from "framer-motion";
 import { BABY_NAME, BIRTH_DATE } from "@/lib/constants";
 import { formatDateES } from "@/lib/utils";
-import AgeCounter from "./AgeCounter";
+import PoemCard from "./PoemCard";
 import FloatingElements from "./FloatingElements";
 import ParticleField from "@/components/background/ParticleField";
 import AuroraGradient from "@/components/background/AuroraGradient";
@@ -65,7 +65,7 @@ export default function Hero() {
               transition={{ delay: 0.3 }}
               className="text-2xl sm:text-3xl md:text-4xl font-decorative text-taupe/60 mb-2 italic"
             >
-              Nacido el <strong className="text-charcoal not-italic">{formatDateES(BIRTH_DATE)}</strong> en Cali, Valle del Cauca
+              Nacido el <strong className="text-charcoal not-italic">{formatDateES(BIRTH_DATE)}</strong> en Garzón, Huila
             </motion.p>
 
             <motion.p
@@ -74,11 +74,11 @@ export default function Hero() {
               transition={{ delay: 0.4, duration: 0.8 }}
               className="text-sm sm:text-base text-mist-gray mt-2 mb-8"
             >
-              5.200 gramos • 48 cm • primera sonrisa a las 2 semanas
+              4.300 gramos • 48 cm • primera sonrisa a las 2 semanas
             </motion.p>
 
-            {/* Age Counter */}
-            <AgeCounter />
+            {/* Poema de amor al bebé */}
+            <PoemCard />
 
             {/* CTA: botón galería → lleva a la galería de fotos */}
             <motion.div
@@ -103,21 +103,6 @@ export default function Hero() {
               </GlowEffect>
             </motion.div>
 
-            {/* Poema de amor al bebé — reemplaza la sección "Historia" */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.9, duration: 1 }}
-              className="mt-16 text-center lg:text-left"
-            >
-              <p className="text-2xl sm:text-3xl md:text-4xl font-decorative italic bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-500 via-sky-500 to-amber-500 leading-snug">
-                {"Pequeño milagro, latido a latido,"}<br />
-                {"tu risa ilumina hasta el último rincón."}<br />
-                {"Cada arruga, cada suspiro, un verso"}<br />
-                {"que el corazón escribe sin pausa, sin retorno."}<br />
-                {"Matthew, eres el sueño que no quiero despertar."}
-              </p>
-            </motion.div>
           </div>
 
           {/* Foto de Matthew */}
