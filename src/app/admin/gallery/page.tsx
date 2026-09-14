@@ -68,9 +68,13 @@ export default function AdminGallery() {
       form.append("caption", caption || "Foto de Matthew");
       form.append("category", category as string);
       const res = await fetch("/api/upload", { method: "POST", body: form });
+      // Vercel Blob put() devuelve HTTP 201 con JSON {url,...}. El chequeo ">204" viejo
+      // (leftover de 204 empty-body) lo salteaba → data quedaba {} → "no se recibió URL"
+      // aunque el blob subió OK. Forzamos parse de JSON en cualquier 2xx.
       let data: any = {};
-      if (res.status > 204) {
-        try { data = await res.json(); } catch { /* empty body */ }
+      const text = await res.text();
+      if (text) {
+        try { data = JSON.parse(text); } catch { /* empty body */ }
       }
       if (!res.ok) throw new Error(data?.error || `upload falló (${res.status})`);
       const blobUrl = data.url || data.src;
@@ -107,6 +111,7 @@ export default function AdminGallery() {
       setPreview(null);
     } catch (err: any) {
       console.error("savePhotos falló:", err?.message || err);
+      alert("No se guardó la foto en la base de datos: " + (err?.message || "error") + ". La imagen está en Blob pero no se persistió.");
     } finally {
       setIsSaving(false);
     }

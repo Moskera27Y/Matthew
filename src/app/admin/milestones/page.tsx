@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Edit, Trash2, Save, X } from "lucide-react";
-import { getStoredMilestones, saveMilestones } from "@/services/admin";
+import { loadMilestones, saveMilestones } from "@/services/adminService";
 import { MILESTONES } from "@/data/milestones";
 import { Milestone } from "@/types/milestone";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -17,24 +17,32 @@ export default function AdminMilestones() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = getStoredMilestones();
-    if (stored.length > 0) setMilestones(stored);
+    loadMilestones()
+      .then((stored) => setMilestones(stored.length > 0 ? stored : MILESTONES))
+      .catch(() => setMilestones(MILESTONES));
   }, []);
 
-  const handleSave = (updated: Milestone) => {
+  const handleSave = async (updated: Milestone) => {
     const updatedList = milestones.map((m) =>
       m.id === updated.id ? updated : m
     );
     setMilestones(updatedList);
-    saveMilestones(updatedList);
-    setEditingId(null);
+    try {
+      await saveMilestones(updatedList);
+      setEditingId(null);
+    } catch (err: any) {
+      alert("No se guardó el hito: " + (err?.message || "error"));
+    }
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm("¿Estás seguro de eliminar este hito?")) {
-      const updatedList = milestones.filter((m) => m.id !== id);
-      setMilestones(updatedList);
-      saveMilestones(updatedList);
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("¿Estás seguro de eliminar este hito?")) return;
+    const updatedList = milestones.filter((m) => m.id !== id);
+    setMilestones(updatedList);
+    try {
+      await saveMilestones(updatedList);
+    } catch (err: any) {
+      alert("No se eliminó el hito: " + (err?.message || "error"));
     }
   };
 
@@ -144,14 +152,18 @@ export default function AdminMilestones() {
       </motion.div>
     );
 
-    function handleSaveFn(updated: Milestone) {
+    const handleSaveFn = async (updated: Milestone) => {
       const updatedList = milestones.map((m) =>
         m.id === updated.id ? updated : m
       );
       setMilestones(updatedList);
-      saveMilestones(updatedList);
-      setEditingId(null);
-    }
+      try {
+        await saveMilestones(updatedList);
+        setEditingId(null);
+      } catch (err: any) {
+        alert("No se guardó el hito: " + (err?.message || "error"));
+      }
+    };
   };
 
   return (
@@ -200,7 +212,7 @@ export default function AdminMilestones() {
                           </p>
                           <p className="text-xs text-mist-gray">
                             📅 {formatDateES(milestone.date)} •👶{" "}
-                            {milestone.babyAge.days}d
+                            {milestone.babyAge?.days ?? "—"}d
                           </p>
                         </div>
                         <div className="flex gap-1 ml-4">

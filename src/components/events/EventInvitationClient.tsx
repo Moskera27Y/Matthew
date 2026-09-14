@@ -32,13 +32,13 @@ const CONFETTI_COLORS = [
   "#FF72D5", "#06FFA5", "#FF6B6B", "#7B61FF",
 ];
 
-export default function EventInvitationClient({ event, babyPhoto, autoOpen = true }: Props) {
+export default function EventInvitationClient({ event, babyPhoto, autoOpen = false }: Props) {
   const [isOpened, setIsOpened] = useState(false);
 
-  // Partículas de fondo vibrantes
+  // Partículas de fondo (reduced para mobile: 25 en vez de 40)
   const particles = useMemo(
     () =>
-      Array.from({ length: 40 }).map((_, i) => ({
+      Array.from({ length: 25 }).map((_, i) => ({
         id: i,
         x: Math.random() * 100,
         y: Math.random() * 100,
@@ -50,10 +50,10 @@ export default function EventInvitationClient({ event, babyPhoto, autoOpen = tru
     []
   );
 
-  // Confeti de apertura
+  // Confeti de apertura (reduced: 30 en vez de 80 — previene jank mobile)
   const confetti = useMemo(
     () =>
-      Array.from({ length: 80 }).map((_, i) => ({
+      Array.from({ length: 30 }).map((_, i) => ({
         id: i,
         x: Math.random() * 100,
         delay: Math.random() * 1.5,
@@ -166,7 +166,7 @@ export default function EventInvitationClient({ event, babyPhoto, autoOpen = tru
         {/* SOBRE 3D con solapa que se abre + carta deslizante */}
         <div
           className="relative w-full h-[28rem] [perspective:1600px] [transform-style:preserve-3d]"
-          onClick={() => !isOpened && setIsOpened(true)}
+          onClick={() => setIsOpened((prev) => !prev)}
         >
           {/* Cuerpo del sobre — 3D */}
           <motion.div
@@ -379,7 +379,7 @@ export default function EventInvitationClient({ event, babyPhoto, autoOpen = tru
             </div>
           </motion.div>
 
-          {/* Hint "click para abrir" */}
+          {/* Hint "click para abrir / cerrar" */}
           <AnimatePresence>
             {!isOpened && (
               <motion.div
@@ -390,6 +390,17 @@ export default function EventInvitationClient({ event, babyPhoto, autoOpen = tru
                 transition={{ delay: 0.8, duration: 0.6 }}
               >
                 Haz click para abrir 💌
+              </motion.div>
+            )}
+            {isOpened && (
+              <motion.div
+                className="absolute bottom-2 left-1/2 -translate-x-1/2 text-sm text-white/80 font-medium flex items-center gap-1"
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ delay: 0.5, duration: 0.6 }}
+              >
+                Haz click para cerrar ✕
               </motion.div>
             )}
           </AnimatePresence>

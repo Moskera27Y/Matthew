@@ -34,6 +34,6 @@ export default async function EventInvitationPage({ params }: PageProps) {
     // 404 estático si el id no existe ni como default.
     notFound();
   }
-  // autoOpen=true → el sobre se abre con animación al navegar desde /eventos
-  return <EventInvitationLoader eventId={id} autoOpen={true} />;
+  // autoOpen=false → sobre cerrado hasta click (profesional: el user abre voluntariamente)
+  return <EventInvitationLoader eventId={id} autoOpen={false} />;
 }

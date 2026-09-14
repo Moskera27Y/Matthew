@@ -42,9 +42,12 @@ export function useAdminData() {
   const [event, setEvent] = useState<EventDetails>(DEFAULT_EVENT);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadAll = useCallback(async () => {
+  const loadAll = useCallback(async (attempt = 1) => {
     setIsLoading(true);
     try {
+      // fetch a Neon con timeout (Neon free puede tardar al despertar → retry)
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 8000); // 8s timeout serverless
       const [m, p, g, s, b, f, e, st] = await Promise.all([
         loadMilestones(),
         loadPhotos(),
@@ -54,17 +57,24 @@ export function useAdminData() {
         loadFamily(),
         loadEvent(),
         loadSettings(),
-      ]);
-      setMilestones(m);
+      ]).finally(() => clearTimeout(t));
+      // Sólo actualizo state si REALMENTE trajeron datos de Neon (no defaults del catch interno)
+      // loadMilestones etc. ya caen a localStorage/DEFAULT en su propio catch → aquí propagamos.
+      if (m) setMilestones(m);
       setPhotos(p);
       setGrowthRecords(g);
       setStories(s);
-      setBrothers(b);
-      setFamilyMembers(f);
-      setEvent(e);
-      setBabyPhoto((st as AdminSettings)?.babyPhoto || "");
-    } catch {
-      // keep defaults on error
+      if (b) setBrothers(b);
+      if (f) setFamilyMembers(f);
+      if (e) setEvent(e);
+      setBabyPhoto((st as AdminSettings)?.babyPhoto || (e as any)?.photoUrl || "");
+    } catch (err: any) {
+      // Retry 1 vez tras 1s (Neon cold-start) → si sigue fallando, mantener defaults con warning.
+      if (attempt === 1) {
+        await new Promise((r) => setTimeout(r, 1000));
+        return loadAll(2);
+      }
+      console.warn("[useAdminData] Neon unreachable tras retries — usando defaults:", err?.message?.slice(0, 80));
     } finally {
       setIsLoading(false);
     }

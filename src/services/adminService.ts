@@ -122,12 +122,8 @@ export const loadEvents = async (): Promise<EventDetails[]> => {
 };
 
 export const saveEvents = async (events: EventDetails[]): Promise<void> => {
-  try {
-    await saveToServer({ events });
-  } catch (err: any) {
-    console.warn("[adminService] saveEvents → fallback localStorage:", err?.message?.slice(0, 80));
-  }
   safeSet(storageKeys.events, events);
+  await saveToServer({ events });
 };
 
 export const findEventById = async (id: string): Promise<EventDetails | null> => {
