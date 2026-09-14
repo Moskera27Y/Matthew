@@ -1,17 +1,18 @@
 // src/app/eventos/[id]/page.tsx
+// Server Component shell: resuelve `id` para routing + metadata,
+// luego delega la lectura de localStorage (cliente) a EventInvitationLoader.
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { findEventById, loadSettings } from "@/services/adminService";
-import EventInvitationClient from "@/components/events/EventInvitationClient";
-import { EventDetails } from "@/types/event";
-
-// Server Component: loads event from localStorage on server via headers fallback
-export const dynamic = "force-dynamic"; // para leer localStorage del cliente
+import { findEventById } from "@/services/adminService";
+import EventInvitationLoader from "@/components/events/EventInvitationLoader";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+// Pre-render estática de metadatos: necesita el evento REAL.
+// Nota: en servidor localStorage no existe → findEventById cae al evento
+// default. La metadata del cliente se hidrata después y usa el evento real.
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const event = findEventById(id);
@@ -26,14 +27,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function EventInvitationPage({ params }: PageProps) {
   const { id } = await params;
-  const event = findEventById(id);
-
-  if (!event) {
+  // El shell server valida que el id exista (default event o lista).
+  const exists = !!findEventById(id);
+  if (!exists) {
+    // notFound() del servidor lanza 404 estático si el id no coincide al
+    // menos al default. El loader cliente hará fetch real al montar.
     notFound();
   }
-
-  const settings = loadSettings();
-
-  // autoOpen=true (default) → el sobre se abre con animación al navegar desde /eventos
-  return <EventInvitationClient event={event} babyPhoto={settings?.babyPhoto || ""} autoOpen={true} />;
+  // autoOpen=true → el sobre se abre con animación al navegar desde /eventos
+  return <EventInvitationLoader eventId={id} autoOpen={true} />;
 }
