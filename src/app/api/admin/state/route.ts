@@ -47,16 +47,10 @@ async function ensureSeeded(sql: ReturnType<typeof neon>) {
                 VALUES (${id}, ${title}, ${date}, ${time}, ${location}, ${address}, ${description}, ${thankYouMessage}, ${etype || "bautizo"}, ${photoUrl}, NOW(), NOW())
                 ON CONFLICT (id) DO UPDATE SET title=${title}, date=${date}, time=${time}, location=${location}, address=${address}, description=${description}, "thankYouMessage"=${thankYouMessage}`;
   }
-  // PHOTOS
-  const pc = (await sql`SELECT COUNT(*)::int AS c FROM "Photo"` as any[])[0]?.c ?? "0";
-  if (Number(pc) === 0) {
-    for (const p of PHOTOS) {
-      if (!p.id || !p.src) continue;
-      const { id, src, alt, caption, category } = p;
-      await sql`INSERT INTO "Photo" (id, src, alt, caption, category, "createdAt", "updatedAt")
-                  VALUES (${id}, ${src}, ${alt || ""}, ${caption || ""}, ${category || "familia"}, NOW(), NOW()) ON CONFLICT (id) DO UPDATE SET src=${src}, alt=${alt || ""}, caption=${caption || ""}, category=${category || "familia"}`;
-    }
-  }
+  // PHOTOS: NO seedear placeholders (confunde al user). La galería usa el fallback
+  // /data/photos en el cliente cuando Neon está empty; el admin sube → POST persiste Blob URLs.
+  // Si la tabla Photo está empty, no insertamos nada → homepage fallback a PHOTOS estático.
+  // (Anteriormente seedeaba PHOTOS que eran placeholders → aparecían "fotos" falsas.)
   // MILESTONES
   const mc = (await sql`SELECT COUNT(*)::int AS c FROM "Milestone"` as any[])[0]?.c ?? "0";
   if (Number(mc) === 0) {
