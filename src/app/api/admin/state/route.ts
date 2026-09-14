@@ -14,6 +14,7 @@ import { DEFAULT_BROTHERS } from "@/types/brother";
 import { DEFAULT_EVENT } from "@/types/event";
 import { PHOTOS } from "@/data/photos";
 import { MILESTONES } from "@/data/milestones";
+import { FAMILY_MEMBERS } from "@/data/family";
 
 const connectionString =
   process.env.DATABASE_URL || process.env.DIRECT_URL || "";
@@ -24,33 +25,60 @@ const getSQL = (): ReturnType<typeof neon> => {
   return _sql;
 };
 
-// ---------- Seed idempotente (server-only) ----------
+// ---------- Seed idempotente POR TABLA (verifica cada tabla individualmente) ----------
 let _seeded = false;
 async function ensureSeeded(sql: ReturnType<typeof neon>) {
   if (_seeded) return;
-  const [{ count }] = (await sql`SELECT COUNT(*)::int AS count FROM "Brother"`) as any[];
-  if (Number(count) === 0) {
+  // BROTHERS
+  const bc = (await sql`SELECT COUNT(*)::int AS c FROM "Brother"` as any[])[0]?.c ?? "0";
+  if (Number(bc) === 0) {
     for (const b of DEFAULT_BROTHERS) {
       const { id, name, role, age, photoUrl, message, category, order } = b;
       await sql`INSERT INTO "Brother" (id, name, role, age, "photoUrl", message, category, "order", "createdAt", "updatedAt")
                   VALUES (${id}, ${name}, ${role}, ${age}, ${photoUrl}, ${message}, ${category}, ${order}, NOW(), NOW())
                   ON CONFLICT (id) DO UPDATE SET name=${name}, role=${role}, age=${age}, "photoUrl"=${photoUrl}, message=${message}, category=${category}, "order"=${order}`;
     }
+  }
+  // EVENT
+  const ec = (await sql`SELECT COUNT(*)::int AS c FROM "Event"` as any[])[0]?.c ?? "0";
+  if (Number(ec) === 0) {
     const { id, title, date, time, location, address, description, thankYouMessage, type: etype, photoUrl } = DEFAULT_EVENT;
     await sql`INSERT INTO "Event" (id, title, date, time, location, address, description, "thankYouMessage", type, "photoUrl", "createdAt", "updatedAt")
                 VALUES (${id}, ${title}, ${date}, ${time}, ${location}, ${address}, ${description}, ${thankYouMessage}, ${etype || "bautizo"}, ${photoUrl}, NOW(), NOW())
                 ON CONFLICT (id) DO UPDATE SET title=${title}, date=${date}, time=${time}, location=${location}, address=${address}, description=${description}, "thankYouMessage"=${thankYouMessage}`;
+  }
+  // PHOTOS
+  const pc = (await sql`SELECT COUNT(*)::int AS c FROM "Photo"` as any[])[0]?.c ?? "0";
+  if (Number(pc) === 0) {
     for (const p of PHOTOS) {
-      if (!p.id || !p.src) continue; // skip fotos con src null/undefined
+      if (!p.id || !p.src) continue;
       const { id, src, alt, caption, category } = p;
       await sql`INSERT INTO "Photo" (id, src, alt, caption, category, "createdAt", "updatedAt")
                   VALUES (${id}, ${src}, ${alt || ""}, ${caption || ""}, ${category || "familia"}, NOW(), NOW()) ON CONFLICT (id) DO UPDATE SET src=${src}, alt=${alt || ""}, caption=${caption || ""}, category=${category || "familia"}`;
     }
+  }
+  // MILESTONES
+  const mc = (await sql`SELECT COUNT(*)::int AS c FROM "Milestone"` as any[])[0]?.c ?? "0";
+  if (Number(mc) === 0) {
     for (const m of MILESTONES) {
       const { id, title, date: mdate, description, icon } = m;
       await sql`INSERT INTO "Milestone" (id, title, date, description, icon, "createdAt")
                   VALUES (${id}, ${title}, ${mdate}, ${description}, ${icon}, NOW()) ON CONFLICT (id) DO UPDATE SET title=${title}, date=${mdate}, description=${description}, icon=${icon}`;
     }
+  }
+  // FAMILY
+  const fc = (await sql`SELECT COUNT(*)::int AS c FROM "FamilyMember"` as any[])[0]?.c ?? "0";
+  if (Number(fc) === 0) {
+    for (const f of FAMILY_MEMBERS) {
+      const { id, name, relationship, role, photoUrl, quote, order } = f;
+      await sql`INSERT INTO "FamilyMember" (id, name, relationship, role, "photoUrl", quote, "order", "createdAt", "updatedAt")
+                  VALUES (${id}, ${name}, ${relationship || ""}, ${role || ""}, ${photoUrl || ""}, ${quote || ""}, ${order || 0}, NOW(), NOW())
+                  ON CONFLICT (id) DO UPDATE SET name=${name}, relationship=${relationship || ""}, role=${role || ""}, "photoUrl"=${photoUrl || ""}, quote=${quote || ""}, "order"=${order || 0}`;
+    }
+  }
+  // SETTINGS
+  const sc = (await sql`SELECT COUNT(*)::int AS c FROM "Setting"` as any[])[0]?.c ?? "0";
+  if (Number(sc) === 0) {
     for (const [k, v] of Object.entries({ babyPhoto: PHOTOS[0]?.src || "", babyName: "Matthew", babyBirthDate: "2026-07-31" })) {
       await sql`INSERT INTO "Setting" (key, value) VALUES (${k}, ${v ?? ""}) ON CONFLICT (key) DO UPDATE SET value=${v ?? ""}`;
     }
