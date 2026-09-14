@@ -23,7 +23,7 @@ import {
   categoryLabels,
   DEFAULT_BROTHERS,
 } from "@/types/brother";
-import { loadBrothers, saveBrothers } from "@/services/adminService";
+import { loadBrothers, saveBrothers, deleteItem } from "@/services/adminService";
 
 // Mapa de etiquetas legibles para el role
 const roleLabels: Record<BrotherRole, string> = {
@@ -233,13 +233,19 @@ export default function AdminBrothers() {
     loadBrothers().then(setBrothers).catch(() => setBrothers(DEFAULT_BROTHERS));
   }, []);
 
-  const handleSave = async (b: Brother) => {
+  const handleSave = async (bro: Brother) => {
     let list = [...brothers];
-    const idx = list.findIndex((x) => x.id === b.id);
-    if (idx >= 0) list[idx] = b;
-    else list = [...list, b];
+    const idx = list.findIndex((x) => x.id === bro.id);
+    if (idx >= 0) list[idx] = bro;
+    else list = [...list, bro];
     list.sort((a, b) => a.order - b.order);
-    await saveBrothers(list);
+    try {
+      await saveBrothers(list);
+      window.dispatchEvent(new Event("storage"));
+    } catch (err: any) {
+      console.error("[AdminBrothers] saveBrothers falló:", err?.message || err);
+      alert("Error guardando: " + (err?.message || "inténtalo"));
+    }
     setBrothers(list);
     setEditing(null);
   };
@@ -247,8 +253,15 @@ export default function AdminBrothers() {
   const handleDelete = async (id: string) => {
     if (!confirm("¿Eliminar este hermano?")) return;
     const list = brothers.filter((b) => b.id !== id);
-    await saveBrothers(list);
     setBrothers(list);
+    try {
+      await deleteItem("brothers", id); // DELETE explícito a Neon
+      try { localStorage.setItem("mj_admin_brothers", JSON.stringify(list)); } catch {}
+      window.dispatchEvent(new Event("storage"));
+    } catch (err: any) {
+      console.error("[AdminBrothers] delete falló:", err?.message || err);
+      alert("No se pudo borrar: " + (err?.message || "error"));
+    }
   };
 
   return (

@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Edit2, Trash2, Save, X, Upload, UserRound } from "lucide-react";
 import { FamilyMember } from "@/types/family";
-import { loadFamily, saveFamily } from "@/services/adminService";
+import { loadFamily, saveFamily, deleteItem } from "@/services/adminService";
 import AdminLayout from "@/components/admin/AdminLayout";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
@@ -195,14 +195,16 @@ export default function AdminFamily() {
   );
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("¿Eliminar a este miembro?")) {
-      const updated = members.filter((m) => m.id !== id);
-      setMembers(updated);
-      try {
-        await saveFamily(updated);
-      } catch (err: any) {
-        console.error("[AdminFamily] delete saveFamily falló:", err?.message || err);
-      }
+    if (!window.confirm("¿Eliminar a este miembro?")) return;
+    const updated = members.filter((m) => m.id !== id);
+    setMembers(updated);
+    try {
+      await deleteItem("family", id); // DELETE explícito a Neon (el POST es upsert-only)
+      try { localStorage.setItem("mj_admin_family", JSON.stringify(updated)); } catch {}
+      window.dispatchEvent(new Event("storage"));
+    } catch (err: any) {
+      console.error("[AdminFamily] delete falló:", err?.message || err);
+      alert("No se pudo borrar: " + (err?.message || "error"));
     }
   };
 

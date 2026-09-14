@@ -1,9 +1,13 @@
 // src/app/api/admin/state/route.ts
-// CRUD cross-device REAL vía Neon PostgreSQL usando @neondatabase/serverless.
+// CRUD cross-device REAL vía Neon PostgreSQL usando @neondigital/serverless.
 // No usa Prisma Client en serverless (evita el pg-TCP pool broken en Edge/Neon).
 // Usa sql`...` tagged templates → conexión HTTP a Neon (serverless-friendly).
 // GET /api/admin/state  → estado completo desde Neon (o seed defaults si DB vacía).
-// POST /api/admin/state → upsert batch + sync (delete) de estado admin → Neon.
+// POST /api/admin/state → UPSERT batch de estado admin → Neon (NO sync-delete:
+// el borrado explícito se hace vía DELETE /api/admin/state?id=X&table=photos).
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
 import { DEFAULT_BROTHERS } from "@/types/brother";
@@ -37,7 +41,7 @@ async function ensureSeeded(sql: ReturnType<typeof neon>) {
                 VALUES (${id}, ${title}, ${date}, ${time}, ${location}, ${address}, ${description}, ${thankYouMessage}, ${etype || "bautizo"}, ${photoUrl}, NOW(), NOW())
                 ON CONFLICT (id) DO UPDATE SET title=${title}, date=${date}, time=${time}, location=${location}, address=${address}, description=${description}, "thankYouMessage"=${thankYouMessage}`;
     for (const p of PHOTOS) {
-      if (!p.id || !p.src) continue; // skip fotos generadas con src null/undefined
+      if (!p.id || !p.src) continue; // skip fotos con src null/undefined
       const { id, src, alt, caption, category } = p;
       await sql`INSERT INTO "Photo" (id, src, alt, caption, category, "createdAt", "updatedAt")
                   VALUES (${id}, ${src}, ${alt || ""}, ${caption || ""}, ${category || "familia"}, NOW(), NOW()) ON CONFLICT (id) DO UPDATE SET src=${src}, alt=${alt || ""}, caption=${caption || ""}, category=${category || "familia"}`;
@@ -96,7 +100,7 @@ export async function GET() {
         settings: settingMap,
         source: "server-neon",
       },
-      { headers: { "Cache-Control": "no-store" } }
+      { headers: { "Cache-Control": "no-store", "CDN-Cache-Control": "no-store" } }
     );
   } catch (e: any) {
     console.error("[api/admin/state] GET failed:", e?.message || e);
@@ -104,9 +108,7 @@ export async function GET() {
   }
 }
 
-// Helper: construye un array para usar con ANY() en tagged template neon.
-// NOTA: @neondigital/serverless v0.10.4 NO tiene sql.unsafe → usamos
-// el tagged template sql`WHERE id = ANY(${ids})` (array como parámetro).
+// Helper: array de ids para neon ANY() tagged template (v0.10.4 soporta arrays como argumentos)
 function anyIds(ids: string[]) {
   return ids.length ? ids : [null];
 }
@@ -118,17 +120,11 @@ export async function POST(req: Request) {
     await ensureSeeded(sql);
     const body = await req.json();
 
-    // BROTHERS: upsert + sync (borrar los no enviados → delete real funciona)
+    // BROTHERS: upsert (NOT sync-delete — evita data loss si browser tiene estado parcial)
     if (body.brothers) {
-      const inbound = (body.brothers as any[]).filter((b) => b.id);
-      if (inbound.length) {
-        await sql`DELETE FROM "Brother" WHERE NOT (id = ANY(${anyIds(inbound.map((b) => b.id))}))`;
-      } else {
-        await sql`DELETE FROM "Brother"`;
-      }
-      for (const b of inbound) {
+      for (const b of body.brothers as any[]) {
         await sql`INSERT INTO "Brother" (id, name, role, age, "photoUrl", message, category, "order", "createdAt", "updatedAt")
-                    VALUES (${b.id}, ${b.name}, ${b.role}, ${b.age}, ${b.photoUrl || ""}, ${b.message || ""}, ${b.category || "brother"}, ${b.order || 0}, NOW(), NOW())
+                    VALUES (${b.id || `b-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`}, ${b.name}, ${b.role}, ${b.age}, ${b.photoUrl || ""}, ${b.message || ""}, ${b.category || "brother"}, ${b.order || 0}, NOW(), NOW())
                     ON CONFLICT (id) DO UPDATE SET name=${b.name}, role=${b.role}, age=${b.age}, "photoUrl"=${b.photoUrl || ""}, message=${b.message || ""}, category=${b.category || "brother"}, "order"=${b.order || 0}`;
       }
     }
@@ -142,29 +138,20 @@ export async function POST(req: Request) {
                   ON CONFLICT (id) DO UPDATE SET title=${e.title}, date=${e.date}, time=${e.time || ""}, location=${e.location || ""}, address=${e.address || ""}, description=${e.description || ""}, "thankYouMessage"=${e.thankYouMessage || ""}, type=${e.type || "bautizo"}, "photoUrl"=${e.photoUrl || ""}`;
     }
 
-    // PHOTOS: upsert + sync (borrar fotos que NO vienen en el array → delete real funciona)
+    // PHOTOS: upsert (NO sync-delete — borrado via DELETE explícito)
     if (body.photos) {
-      const inbound = (body.photos as any[]).filter((p) => p.id);
-      if (inbound.length) {
-        await sql`DELETE FROM "Photo" WHERE NOT (id = ANY(${anyIds(inbound.map((p) => p.id))}))`;
-      } else {
-        await sql`DELETE FROM "Photo"`;
-      }
-      for (const p of inbound) {
+      for (const p of body.photos as any[]) {
         await sql`INSERT INTO "Photo" (id, src, alt, caption, category, "createdAt", "updatedAt")
-                    VALUES (${p.id}, ${p.src}, ${p.alt || ""}, ${p.caption || ""}, ${p.category || "familia"}, NOW(), NOW())
+                    VALUES (${p.id || `p-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`}, ${p.src}, ${p.alt || ""}, ${p.caption || ""}, ${p.category || "familia"}, NOW(), NOW())
                     ON CONFLICT (id) DO UPDATE SET src=${p.src}, alt=${p.alt || ""}, caption=${p.caption || ""}, category=${p.category || "familia"}`;
       }
     }
 
+    // MILESTONES: upsert
     if (body.milestones) {
-      const inbound = (body.milestones as any[]).filter((m) => m.id);
-      if (inbound.length) {
-        await sql`DELETE FROM "Milestone" WHERE NOT (id = ANY(${anyIds(inbound.map((m) => m.id))}))`;
-      }
-      for (const m of inbound) {
+      for (const m of body.milestones as any[]) {
         await sql`INSERT INTO "Milestone" (id, title, date, description, icon, "createdAt", "updatedAt")
-                    VALUES (${m.id}, ${m.title}, ${m.date}, ${m.description || ""}, ${m.icon || ""}, NOW(), NOW())
+                    VALUES (${m.id || `m-${Date.now()}`}, ${m.title}, ${m.date}, ${m.description || ""}, ${m.icon || ""}, NOW(), NOW())
                     ON CONFLICT (id) DO UPDATE SET title=${m.title}, date=${m.date}, description=${m.description || ""}, icon=${m.icon || ""}`;
       }
     }
@@ -176,44 +163,28 @@ export async function POST(req: Request) {
       }
     }
 
-    // GROWTH: full sync (borrar no-enviados para que deletes funcionen)
+    // GROWTH: upsert (NO sync-delete)
     if (body.growth !== undefined) {
-      const inbound = (body.growth as any[]).filter((r) => r.id);
-      if (inbound.length) {
-        await sql`DELETE FROM "GrowthRecord" WHERE NOT (id = ANY(${anyIds(inbound.map((r) => r.id))}))`;
-      } else {
-        await sql`DELETE FROM "GrowthRecord"`;
-      }
-      for (const r of inbound) {
+      for (const r of body.growth as any[]) {
         const ba = r.babyAge || { days: 0, weeks: 0, months: 0, years: 0 };
         await sql`INSERT INTO "GrowthRecord" (id, date, "babyAgeDays", "babyAgeWeeks", "babyAgeMonths", "babyAgeYears", weight, height, "headCircumference", notes, "createdAt")
-                    VALUES (${r.id}, ${r.date}, ${ba.days || null}, ${ba.weeks || null}, ${ba.months || null}, ${ba.years || null}, ${r.weight || null}, ${r.height || null}, ${r.headCircumference || null}, ${r.notes || ""}, NOW())
+                    VALUES (${r.id || `g-${Date.now()}`}, ${r.date}, ${ba.days || null}, ${ba.weeks || null}, ${ba.months || null}, ${ba.years || null}, ${r.weight || null}, ${r.height || null}, ${r.headCircumference || null}, ${r.notes || ""}, NOW())
                     ON CONFLICT (id) DO UPDATE SET "babyAgeDays"=${ba.days || null}, "babyAgeWeeks"=${ba.weeks || null}, "babyAgeMonths"=${ba.months || null}, "babyAgeYears"=${ba.years || null}, weight=${r.weight || null}, height=${r.height || null}, "headCircumference"=${r.headCircumference || null}, notes=${r.notes || ""}`;
       }
     }
 
-    // FAMILY: full sync (borrar no-enviados → eliminar/vaciar foto funciona)
+    // FAMILY: upsert (NO sync-delete)
     if (body.family !== undefined) {
-      const inbound = (body.family as any[]).filter((f) => f.id);
-      if (inbound.length) {
-        await sql`DELETE FROM "FamilyMember" WHERE NOT (id = ANY(${anyIds(inbound.map((f) => f.id))}))`;
-      } else {
-        await sql`DELETE FROM "FamilyMember"`;
-      }
-      for (const f of inbound) {
+      for (const f of body.family as any[]) {
         await sql`INSERT INTO "FamilyMember" (id, name, relationship, role, "photoUrl", quote, "order", "createdAt")
-                    VALUES (${f.id}, ${f.name}, ${f.relationship || ""}, ${f.role || ""}, ${f.photoUrl || ""}, ${f.quote || ""}, ${f.order || 0}, NOW())
+                    VALUES (${f.id || `f-${Date.now()}`}, ${f.name}, ${f.relationship || ""}, ${f.role || ""}, ${f.photoUrl || ""}, ${f.quote || ""}, ${f.order || 0}, NOW())
                     ON CONFLICT (id) DO UPDATE SET name=${f.name}, relationship=${f.relationship || ""}, role=${f.role || ""}, "photoUrl"=${f.photoUrl || ""}, quote=${f.quote || ""}, "order"=${f.order || 0}`;
       }
     }
 
-    // STORIES: sync (preserve + allow delete)
+    // STORIES: upsert
     if (body.stories) {
-      const inbound = (body.stories as any[]).filter((s) => s.id);
-      if (inbound.length) {
-        await sql`DELETE FROM "Story" WHERE NOT (id = ANY(${anyIds(inbound.map((s) => s.id))}))`;
-      }
-      for (const s of inbound) {
+      for (const s of body.stories as any[]) {
         await sql`INSERT INTO "Story" (id, title, content, date, "photoUrl", "createdAt")
                     VALUES (${s.id}, ${s.title}, ${s.content || ""}, ${s.date || ""}, ${s.photoUrl || ""}, NOW())
                     ON CONFLICT (id) DO UPDATE SET title=${s.title}, content=${s.content || ""}, date=${s.date || ""}, "photoUrl"=${s.photoUrl || ""}`;
@@ -225,5 +196,33 @@ export async function POST(req: Request) {
   } catch (e: any) {
     console.error("[api/admin/state] POST failed:", e?.message || e);
     return NextResponse.json({ error: "state save failed", detail: (e as Error)?.message?.slice(0, 120) }, { status: 500 });
+  }
+}
+
+// DELETE /api/admin/state?table=photos&id=xyz → borrado EXPLÍCITO de un row
+export async function DELETE(req: Request) {
+  try {
+    if (!connectionString) return NextResponse.json({ error: "DATABASE_URL missing" }, { status: 500 });
+    const sql = getSQL();
+    const url = new URL(req.url);
+    const table = url.searchParams.get("table");
+    const id = url.searchParams.get("id");
+    if (!table || !id) return NextResponse.json({ error: "table+id required" }, { status: 400 });
+    const allowed: Record<string, string> = { photos: "Photo", brothers: "Brother", family: "FamilyMember", growth: "GrowthRecord", stories: "Story", milestones: "Milestone" };
+    const qTable = allowed[table.toLowerCase()] || allowed[table];
+    if (!qTable) return NextResponse.json({ error: "table not allowed" }, { status: 400 });
+    // neon v0.10.4 NO tiene .unsafe → usar tagged template con ${id} que neon bindea como valor (no concat)
+    switch (qTable) {
+      case "Photo": await sql`DELETE FROM "Photo" WHERE id = ${id}`; break;
+      case "Brother": await sql`DELETE FROM "Brother" WHERE id = ${id}`; break;
+      case "FamilyMember": await sql`DELETE FROM "FamilyMember" WHERE id = ${id}`; break;
+      case "GrowthRecord": await sql`DELETE FROM "GrowthRecord" WHERE id = ${id}`; break;
+      case "Story": await sql`DELETE FROM "Story" WHERE id = ${id}`; break;
+      case "Milestone": await sql`DELETE FROM "Milestone" WHERE id = ${id}`; break;
+    }
+    return NextResponse.json({ ok: true, deleted: id, table: qTable });
+  } catch (e: any) {
+    console.error("[api/admin/state] DELETE failed:", e?.message || e);
+    return NextResponse.json({ error: "delete failed", detail: (e as Error)?.message?.slice(0, 120) }, { status: 500 });
   }
 }

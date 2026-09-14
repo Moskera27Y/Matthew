@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2, Upload, X } from "lucide-react";
 import { Photo, PhotoCategory } from "@/types/photo";
-import { loadPhotos, savePhotos } from "@/services/adminService";
+import { loadPhotos, savePhotos, deleteItem } from "@/services/adminService";
 import { photoCategoryLabels } from "@/data/photos";
 import AdminLayout from "@/components/admin/AdminLayout";
 import Button from "@/components/ui/Button";
@@ -34,10 +34,18 @@ export default function AdminGallery() {
   });
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("¿Eliminar esta foto?")) {
-      const updated = photos.filter((p) => p.id !== id);
-      setPhotos(updated);
-      try { await savePhotos(updated); } catch (err: any) { console.error("savePhotos delete falló:", err?.message); }
+    if (!window.confirm("¿Eliminar esta foto?")) return;
+    const updated = photos.filter((p) => p.id !== id);
+    setPhotos(updated);
+    try {
+      await deleteItem("photos", id); // DELETE explícito a Neon (el POST es upsert-only)
+      // Actualizar mirror localStorage offline (el POST no borra)
+      try { localStorage.setItem("mj_admin_photos", JSON.stringify(updated)); } catch {}
+      // Refrescar homepage si está abierta en otro tab
+      window.dispatchEvent(new Event("storage"));
+    } catch (err: any) {
+      console.error("delete foto falló:", err?.message);
+      alert("No se pudo borrar la foto: " + (err?.message || "error"));
     }
   };
 

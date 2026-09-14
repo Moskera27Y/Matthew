@@ -81,15 +81,19 @@ export async function POST(req: NextRequest) {
       token: BLOB_TOKEN,
       access: "public",
     });
+    // Vercel Blob SDK: en algunas versiones el campo es .url o .href → normalizar.
+    const url = (blob as any).url || (blob as any).href || "";
+    if (!url) throw new Error("Vercel Blob no devolvió URL (put() vacío)");
 
     // Persistir URL + metadata en Neon (serverless-safe, no Prisma)
     const sql = getSQL();
     const id = `upload-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     await sql`INSERT INTO "Photo" (id, src, alt, caption, category, "createdAt", "updatedAt")
-                VALUES (${id}, ${blob.url}, ${alt}, ${caption}, ${category}, NOW(), NOW())
-                ON CONFLICT (id) DO UPDATE SET src=${blob.url}, alt=${alt}, caption=${caption}, category=${category}`;
+                VALUES (${id}, ${url}, ${alt}, ${caption}, ${category}, NOW(), NOW())
+                ON CONFLICT (id) DO UPDATE SET src=${url}, alt=${alt}, caption=${caption}, category=${category}`;
 
-    return NextResponse.json({ ok: true, id, src: blob.url }, { status: 200 });
+    // devolver AMBAS props (url + src) para compat con todos los frontends
+    return NextResponse.json({ ok: true, id, url, src: url }, { status: 200 });
   } catch (e: any) {
     console.error("[api/upload] failed:", e?.message || e);
     return NextResponse.json({ error: e?.message?.slice(0, 150) || "upload failed" }, { status: 500 });

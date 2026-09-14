@@ -67,6 +67,15 @@ async function saveToServer(patch: Record<string, unknown>): Promise<void> {
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
 }
+// DELETE explícito: borra UN row de Neon vía query params (no sync-delete).
+// Evita el bug donde saveX(arrayFiltrado) no persistía el borrado (POST es upsert-only).
+export async function deleteItem(table: "photos" | "brothers" | "family" | "growth" | "stories" | "milestones", id: string): Promise<void> {
+  const res = await fetch(`${STATE_URL}?table=${table}&id=${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+}
 
 // ==================== BROTHERS ====================
 export const loadBrothers = async (): Promise<Brother[]> => {
