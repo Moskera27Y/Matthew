@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "github": { "enabled": true },
+  "build": {
+    "env": [],
+    "command": "rm -rf .next && npm run build"
+  },
+  "cleanOutputs": true
+}
