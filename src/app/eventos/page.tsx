@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Calendar, Clock, MapPin, Star, Mail } from "lucide-react";
+import { Calendar, Clock, MapPin, Star, Mail, Heart, MousePointerClick } from "lucide-react";
 import { EventDetails } from "@/types/event";
 import { loadEvents } from "@/services/adminService";
 import { formatDateES } from "@/lib/utils";
@@ -13,19 +13,88 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 
-// Mini preview del sobre — usado para el evento único y las cards
-function EnvelopePreview({ event }: { event: EventDetails }) {
+// Sobre ANIMADO multicolor con foto del evento — la solapa se entreabre en loop
+// y el sello pulsa, invitando a abrir la invitación completa.
+function EnvelopePreview({ event, large = false }: { event: EventDetails; large?: boolean }) {
+  const photo = event.photoUrl || "";
+  const size = large ? "w-72 h-48" : "w-56 h-36";
+  const photoSize = large ? "w-20 h-20" : "w-14 h-14";
   return (
-    <div className="relative w-56 h-36 [perspective:900px] [transform-style:preserve-3d] mx-auto">
-      <div className="absolute inset-0 mx-auto w-full h-full bg-gradient-to-br from-blush-pink via-warm-gold to-dusty-rose rounded-[1.5rem] shadow-strong border-4 border-pearl-white [transform-style:preserve-3d]">
-        {/* Solapa */}
+    <div className={`relative ${size} [perspective:900px] mx-auto`}>
+      {/* Glow pulsante detrás */}
+      <motion.div
+        className="absolute -inset-3 rounded-[2rem] blur-lg"
+        style={{ background: "linear-gradient(135deg, #E879F9, #FBBF24, #38BDF8)" }}
+        animate={{ opacity: [0.35, 0.6, 0.35] }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+      />
+      {/* Sobre flotante */}
+      <motion.div
+        className="absolute inset-0 [transform-style:preserve-3d]"
+        animate={{ y: [0, -8, 0], rotate: [0, -1, 0, 1, 0] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      >
         <div
-          className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-dusty-rose via-blush-pink to-warm-gold origin-bottom border-b-3 border-pearl-white"
-          style={{ clipPath: "polygon(0 0, 100% 0, 50% 100%)" }}
-        />
-        {/* Detalle dorado */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-4 bg-gradient-to-r from-amber-300 to-yellow-200 rounded-full shadow-glow" />
-      </div>
+          className="absolute inset-0 w-full h-full rounded-[1.5rem] shadow-strong border-4 border-white/90 overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #C026D3 0%, #EC4899 30%, #F59E0B 65%, #0EA5E9 100%)" }}
+        >
+          {/* Shimmer que cruza */}
+          <motion.div
+            className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-18deg] pointer-events-none"
+            animate={{ x: ["-120%", "420%"] }}
+            transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut", repeatDelay: 0.8 }}
+          />
+          {/* Textura diagonal */}
+          <div
+            className="absolute inset-0 opacity-20"
+            style={{ background: "repeating-linear-gradient(45deg, transparent 0 12px, rgba(255,255,255,.35) 12px 17px)" }}
+          />
+          {/* Solapa que se entreabre sola en loop */}
+          <motion.div
+            className="absolute top-0 left-0 w-full h-1/2 origin-top border-b-[3px] border-white/70"
+            style={{
+              clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+              background: "linear-gradient(to bottom, #7E22CE, #DB2777 60%, #F59E0B)",
+              transformStyle: "preserve-3d",
+            }}
+            animate={{ rotateX: [0, -32, 0, 0] }}
+            transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", repeatDelay: 1.4 }}
+          />
+          {/* Foto del evento asomando */}
+          {photo ? (
+            <motion.div
+              className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[5] ${photoSize} rounded-full overflow-hidden border-[3px] border-white shadow-xl`}
+              animate={{ scale: [1, 1.07, 1] }}
+              transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", repeatDelay: 1.4 }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={photo} alt={event.title} className="object-cover w-full h-full" />
+            </motion.div>
+          ) : (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[5] text-white/95">
+              <Heart size={large ? 40 : 30} fill="currentColor" className="drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)]" />
+            </div>
+          )}
+          {/* Sello de cera pulsante */}
+          <motion.div
+            className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ background: "radial-gradient(circle at 35% 30%, #FB7185, #BE123C 70%)", boxShadow: "0 3px 10px rgba(0,0,0,.4), inset 0 2px 4px rgba(255,255,255,.4)" }}
+            animate={{ scale: [1, 1.18, 1] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Heart size={15} className="text-white" fill="currentColor" />
+          </motion.div>
+        </div>
+      </motion.div>
+      {/* Badge invita-al-clic */}
+      <motion.div
+        className="absolute -bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 whitespace-nowrap text-[11px] font-bold text-white px-3.5 py-1.5 rounded-full shadow-lg"
+        style={{ background: "linear-gradient(90deg, #D946EF, #F59E0B)" }}
+        animate={{ y: [0, -4, 0], scale: [1, 1.05, 1] }}
+        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <MousePointerClick size={13} /> Ver invitación animada
+      </motion.div>
     </div>
   );
 }
@@ -163,9 +232,9 @@ export default function EventosPage() {
                       className="bg-white/25 backdrop-blur-md rounded-3xl border border-white/40 shadow-strong overflow-hidden cursor-pointer h-full"
                       whileHover={{ boxShadow: "0 25px 50px -12px rgba(0,0,0,0.15)" }}
                     >
-                      <div className="p-6 text-center">
+                      <div className="p-6 pt-8 text-center">
                         <EnvelopePreview event={event} />
-                        <h3 className="text-xl font-heading-bold text-charcoal mt-4 mb-2 group-hover:text-fuchsia-700 transition-colors">
+                        <h3 className="text-xl font-heading-bold text-charcoal mt-7 mb-2 group-hover:text-fuchsia-700 transition-colors">
                           {event.title}
                         </h3>
                         <p className="text-sm text-charcoal/80 mb-4 line-clamp-2">
@@ -209,23 +278,16 @@ function SingleEventCard({ event }: { event: EventDetails }) {
       transition={{ delay: 0.3 }}
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 items-center p-8 lg:p-12">
-        {/* Preview del sobre grande */}
-        <div className="flex justify-center">
-          <motion.div
-            className="relative w-64 h-44 [perspective:1000px] [transform-style:preserve-3d]"
-            whileHover={{ scale: 1.05, rotateY: 4 }}
-            transition={{ type: "spring", stiffness: 200 }}
-          >
-            <div className="absolute inset-0 mx-auto w-full h-full bg-gradient-to-br from-blush-pink via-warm-gold to-dusty-rose rounded-[2rem] shadow-strong border-6 border-pearl-white [transform-style:preserve-3d]">
-              {/* Solapa */}
-              <div
-                className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-dusty-rose via-blush-pink to-warm-gold origin-bottom border-b-4 border-pearl-white"
-                style={{ clipPath: "polygon(0 0, 100% 0, 50% 100%)" }}
-              />
-              {/* Detalle dorado */}
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-14 h-5 bg-gradient-to-r from-amber-300 to-yellow-200 rounded-full shadow-glow" />
-            </div>
-          </motion.div>
+        {/* Sobre animado grande con foto del evento */}
+        <div className="flex justify-center pb-6 lg:pb-0">
+          <Link href={`/eventos/${event.id}`} className="block">
+            <motion.div
+              whileHover={{ scale: 1.04 }}
+              transition={{ type: "spring", stiffness: 200 }}
+            >
+              <EnvelopePreview event={event} large />
+            </motion.div>
+          </Link>
         </div>
 
         {/* Detalles del evento + botón CTA */}
