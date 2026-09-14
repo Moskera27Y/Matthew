@@ -124,12 +124,36 @@
     text-shadow: 0 4px 12px rgba(50,43,41,0.12);
   }
   
-  /* Section alternating backgrounds */
+  /* Section alternating backgrounds — degradados vivos */
   .section-alt-1 {
-    background: var(--color-pearl-white);
+    background: linear-gradient(180deg, #F8F6F3 0%, #FDF8F3 50%, #F8F6F3 100%);
   }
   .section-alt-2 {
-    background: var(--color-soft-cream);
+    background: linear-gradient(180deg, #FFF0E6 0%, #FBEBDD 50%, #FFF0E6 100%);
+  }
+
+  /* Selección de texto rosa */
+  ::selection {
+    background: #F9A8D4;
+    color: #701A75;
+  }
+
+  /* Flotación lenta para decoraciones */
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-16px) rotate(2deg); }
+  }
+  .animate-float-slow {
+    animation: float-slow 7s ease-in-out infinite;
+  }
+
+  /* Parpadeo suave para brillos */
+  @keyframes twinkle-soft {
+    0%, 100% { opacity: 0.25; transform: scale(0.9); }
+    50% { opacity: 0.9; transform: scale(1.1); }
+  }
+  .animate-twinkle-soft {
+    animation: twinkle-soft 3.5s ease-in-out infinite;
   }
   
   /* Glass effect utility */

@@ -6,6 +6,8 @@ import { FAMILY_MEMBERS } from "@/data/family";
 import { FamilyMember } from "@/types/family";
 import FamilyCard from "./FamilyCard";
 import Container from "@/components/ui/Container";
+import SectionHeading from "@/components/ui/SectionHeading";
+import { Heart } from "lucide-react";
 
 interface FamilySectionProps {
   members?: FamilyMember[];
@@ -15,21 +17,12 @@ export default function FamilySection({ members }: FamilySectionProps) {
   const data = members || FAMILY_MEMBERS;
   return (
     <Container id="family" size="lg" className="section-alt-1">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-        className="text-center mb-16"
-      >
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-heading-bold text-charcoal mb-4">
-          Familia
-        </h2>
-        <p className="text-sm sm:text-base text-mist-gray max-w-2xl mx-auto">
-          Los que tejen esta historia a tu alrededor. Cada miembro aporta un
-          hilo de amor a este hermoso tapiz familiar.
-        </p>
-      </motion.div>
+      <SectionHeading
+        eyebrow="Raíces"
+        title="Familia"
+        description="Los que tejen esta historia a tu alrededor. Cada miembro aporta un hilo de amor a este hermoso tapiz familiar."
+        icon={<Heart size={16} />}
+      />
 
       <motion.div
         initial={{ opacity: 0 }}

@@ -34,54 +34,58 @@ export default function GalleryFilters({
       transition={{ delay: 0.3 }}
       className="flex flex-col sm:flex-row gap-4 mb-8"
     >
-      {/* Category filter */}
-      <div className="flex flex-wrap gap-2">
+      {/* Category filter — pills premium */}
+      <div className="flex flex-wrap justify-center gap-2">
         <button
           onClick={() => onFilterCategory(null)}
-          className={`px-3 py-1.5 text-xs font-light rounded-full transition-all duration-200 ${
+          className={`px-4 py-2 text-xs font-semibold rounded-full transition-all duration-200 ${
             activeCategory === null
-              ? "bg-dusty-rose text-white shadow-md"
-              : "bg-mist-gray/10 text-taupe hover:bg-mist-gray/20"
+              ? "text-white shadow-lg scale-105"
+              : "bg-white/70 text-taupe hover:bg-white border border-mist-gray/20"
           }`}
+          style={activeCategory === null ? { background: "linear-gradient(90deg, #D946EF, #F59E0B)" } : undefined}
         >
-          Todas las categorías
+          Todas
         </button>
         {categories.map((cat) => (
           <button
             key={cat.value}
-            onClick={() => onFilterCategory(cat.value)}
-            className={`px-3 py-1.5 text-xs font-light rounded-full transition-all duration-200 ${
+            onClick={() => onFilterCategory(activeCategory === cat.value ? null : cat.value)}
+            className={`px-4 py-2 text-xs font-semibold rounded-full transition-all duration-200 ${
               activeCategory === cat.value
-                ? "bg-dusty-rose text-white shadow-md"
-                : `${cat.color} hover:opacity-80`
+                ? "text-white shadow-lg scale-105"
+                : `${cat.color} hover:scale-105 border border-transparent`
             }`}
+            style={activeCategory === cat.value ? { background: "linear-gradient(90deg, #D946EF, #F59E0B)" } : undefined}
           >
             {cat.label}
           </button>
         ))}
       </div>
 
-      {/* Month filter */}
-      <div className="flex flex-wrap gap-2">
+      {/* Month filter — pills premium */}
+      <div className="flex flex-wrap justify-center gap-2">
         <button
           onClick={() => onFilterMonth(null)}
-          className={`px-3 py-1.5 text-xs font-light rounded-full transition-all duration-200 ${
+          className={`px-4 py-2 text-xs font-semibold rounded-full transition-all duration-200 ${
             activeMonth === null
-              ? "bg-dusty-rose text-white shadow-md"
-              : "bg-mist-gray/10 text-taupe hover:bg-mist-gray/20"
+              ? "text-white shadow-lg scale-105"
+              : "bg-white/70 text-taupe hover:bg-white border border-mist-gray/20"
           }`}
+          style={activeMonth === null ? { background: "linear-gradient(90deg, #0EA5E9, #7B61FF)" } : undefined}
         >
           Todos los meses
         </button>
         {MONTHS.map((month) => (
           <button
             key={month}
-            onClick={() => onFilterMonth(month)}
-            className={`px-3 py-1.5 text-xs font-light capitalize rounded-full transition-all duration-200 ${
+            onClick={() => onFilterMonth(activeMonth === month ? null : month)}
+            className={`px-4 py-2 text-xs font-semibold capitalize rounded-full transition-all duration-200 ${
               activeMonth === month
-                ? "bg-dusty-rose text-white shadow-md"
-                : "bg-mist-gray/10 text-taupe hover:bg-mist-gray/20"
+                ? "text-white shadow-lg scale-105"
+                : "bg-white/70 text-taupe hover:bg-white hover:scale-105 border border-mist-gray/20"
             }`}
+            style={activeMonth === month ? { background: "linear-gradient(90deg, #0EA5E9, #7B61FF)" } : undefined}
           >
             {month}
           </button>

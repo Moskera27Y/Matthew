@@ -8,6 +8,7 @@ import PhotoCard from "./PhotoCard";
 import Lightbox from "./Lightbox";
 import GalleryFilters from "./GalleryFilters";
 import Container from "@/components/ui/Container";
+import SectionHeading from "@/components/ui/SectionHeading";
 import { Images } from "lucide-react";
 
 interface GalleryProps {
@@ -71,21 +72,12 @@ export default function Gallery({ photos }: GalleryProps) {
 
   return (
     <Container id="gallery" size="lg" className="section-alt-2">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-        className="text-center mb-12"
-      >
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-heading-bold text-charcoal mb-4">
-          Galería de Fotos
-        </h2>
-        <p className="text-sm sm:text-base text-mist-gray max-w-2xl mx-auto">
-          Cada instantánea captura un pedacito del corazón de Matthew.
-          Explora por mes, categoría, o déjate llevar por el recuerdo.
-        </p>
-      </motion.div>
+      <SectionHeading
+        eyebrow="Recuerdos"
+        title="Galería de Fotos"
+        description="Cada instantánea captura un pedacito del corazón de Matthew. Explora por mes, categoría, o déjate llevar por el recuerdo."
+        icon={<Images size={16} />}
+      />
 
       {/* Filtros */}
       <GalleryFilters
@@ -112,10 +104,10 @@ export default function Gallery({ photos }: GalleryProps) {
         </div>
       </motion.div>
 
-      {/* Grid Masonry (Desktop) / Carousel (Mobile) */}
+      {/* Masonry editorial: columnas CSS con ritmo visual variado */}
       <AnimatePresence>
         <motion.div
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6"
+          className="columns-2 sm:columns-3 xl:columns-4 gap-4 sm:gap-5 [column-fill:_balance]"
           layout
         >
           {sortedPhotos.length === 0 ? (

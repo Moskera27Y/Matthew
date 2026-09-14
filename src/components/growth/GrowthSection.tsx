@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import GrowthChart from "./GrowthChart";
 import GrowthTable from "./GrowthTable";
 import Container from "@/components/ui/Container";
+import SectionHeading from "@/components/ui/SectionHeading";
 import Button from "@/components/ui/Button";
-import { Plus, Weight, Ruler } from "lucide-react";
+import { Plus, Weight, Ruler, TrendingUp } from "lucide-react";
 import { GrowthRecord } from "@/types/growth";
 
 interface GrowthSectionProps {
@@ -16,6 +17,12 @@ interface GrowthSectionProps {
 export default function GrowthSection({ records }: GrowthSectionProps) {
   return (
     <Container id="growth" size="lg" className="section-alt-1">
+      <SectionHeading
+        eyebrow="Creciendo"
+        title="Registro de Crecimiento"
+        description="Cada medida es un hito más en su viaje de crecimiento. Registramos peso, estatura y el amor de sus papás."
+        icon={<TrendingUp size={16} />}
+      />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -23,13 +30,6 @@ export default function GrowthSection({ records }: GrowthSectionProps) {
         transition={{ duration: 0.8 }}
         className="text-center mb-12"
       >
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-heading-bold text-charcoal mb-4">
-          Registro de Crecimiento
-        </h2>
-        <p className="text-sm sm:text-base text-mist-gray max-w-2xl mx-auto mb-6">
-          Cada medida es un hito más en su viaje de crecimiento. 
-          Registramos peso, estatura y el amor de sus papás.
-        </p>
 
         <div className="flex justify-center gap-4 mb-8">
           <motion.div

@@ -68,7 +68,7 @@ export default function Lightbox({
             />
           </div>
 
-          {/* Info overlay */}
+          {/* Info overlay + contador */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -89,13 +89,18 @@ export default function Lightbox({
                   </span>
                 )}
               </div>
-              <button
-                onClick={onClose}
-                className="p-1 hover:bg-white/20 rounded transition-colors"
-                aria-label="Cerrar"
-              >
-                <X size={18} />
-              </button>
+              <div className="flex flex-col items-end gap-2">
+                <button
+                  onClick={onClose}
+                  className="p-1 hover:bg-white/20 rounded transition-colors"
+                  aria-label="Cerrar"
+                >
+                  <X size={18} />
+                </button>
+                <span className="text-xs font-medium bg-white/15 backdrop-blur-sm px-2.5 py-1 rounded-full">
+                  {currentIndex + 1} / {allPhotos.length}
+                </span>
+              </div>
             </div>
           </motion.div>
 

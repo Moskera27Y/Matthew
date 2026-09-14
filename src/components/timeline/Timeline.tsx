@@ -6,6 +6,7 @@ import { useRef } from "react";
 import { Milestone } from "@/types/milestone";
 import MilestoneCard from "./MilestoneCard";
 import Container from "@/components/ui/Container";
+import SectionHeading from "@/components/ui/SectionHeading";
 import { SwatchBook } from "lucide-react";
 
 interface TimelineProps {
@@ -27,21 +28,12 @@ export default function Timeline({ milestones }: TimelineProps) {
 
   return (
     <Container id="timeline" size="lg" className="section-alt-1">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-        className="text-center mb-16"
-      >
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-heading-bold text-charcoal mb-4">
-          Línea de Tiempo de Matthew
-        </h2>
-        <p className="text-sm sm:text-base text-mist-gray max-w-2xl mx-auto">
-          Cada momento cuenta. Desde el primer suspiro hasta los primeros pasos, 
-          aquí vive su historia día a día.
-        </p>
-      </motion.div>
+      <SectionHeading
+        eyebrow="Su historia"
+        title="Línea de Tiempo de Matthew"
+        description="Cada momento cuenta. Desde el primer suspiro hasta los primeros pasos, aquí vive su historia día a día."
+        icon={<SwatchBook size={16} />}
+      />
 
       {/* Timeline Desktop (vertical) */}
       <div

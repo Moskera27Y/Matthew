@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import React, { useState } from "react";
 import { Brother, BrotherRole, BrotherCategory, categoryLabels, DEFAULT_BROTHERS } from "@/types/brother";
 import { Users, Sparkle, HeartHandshake } from "lucide-react";
+import SectionHeading from "@/components/ui/SectionHeading";
 import Image from "next/image";
 
 interface Props {
@@ -86,32 +87,13 @@ export default function SiblingsSection({ brothers }: Props) {
       <div className="absolute bottom-1/3 right-1/4 w-[260px] h-[260px] bg-gradient-to-r from-amber-300/15 via-transparent to-emerald-300/15 rounded-full blur-[60px]" />
 
       <div className="max-w-6xl mx-auto px-4 relative z-10">
-        {/* Header premium */}
-        <motion.div
-          className="text-center mb-12 sm:mb-16"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-        >
-          <motion.div
-            className="flex items-center justify-center gap-3 mb-4"
-            initial={{ scale: 0, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.15, type: "spring", stiffness: 150 }}
-          >
-            <Users size={28} className="text-amber-500" />
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-heading-bold bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-600 via-pink-500 to-amber-400">
-              Hermanos y Primos
-            </h2>
-            <Users size={28} className="text-fuchsia-500" />
-          </motion.div>
-          <p className="text-sm sm:text-base text-charcoal/75 max-w-2xl mx-auto px-2">
-            Nuestros pequeños compañeros de aventuras, siempre listos para compartir
-            una sonrisa y descubrir el mundo a tu lado. Explora por categoría.
-          </p>
-        </motion.div>
+        {/* Header unificado */}
+        <SectionHeading
+          eyebrow="Compañeros"
+          title="Hermanos y Primos"
+          description="Nuestros pequeños compañeros de aventuras, siempre listos para compartir una sonrisa y descubrir el mundo a tu lado. Explora por categoría."
+          icon={<Users size={16} />}
+        />
 
         {/* Galería agrupada por categoría */}
         {hasAny ? (
