@@ -33,7 +33,16 @@ function load<T>(key: string, fallback: T): T {
 
 function save<T>(key: string, data: T): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(key, JSON.stringify(data));
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (err: any) {
+    // QuotaExceededError (base64 de imágenes grandes) u otros fallos de localStorage
+    console.error(`[adminService] save("${key}") falló:`, err?.message || err);
+    alert(
+      "No se pudo guardar: la imagen es demasiado grande o localStorage está lleno. " +
+        "Reduce el tamaño de la foto e intenta de nuevo."
+    );
+  }
 }
 
 // Milestones

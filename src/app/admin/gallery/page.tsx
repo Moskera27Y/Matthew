@@ -75,10 +75,17 @@ export default function AdminGallery() {
     };
     const updated = [newPhoto, ...photos];
     setPhotos(updated);
-    savePhotos(updated);
-    setIsSaving(false);
-    setShowAddModal(false);
-    setPreview(null);
+    try {
+      savePhotos(updated);
+      // Sincronizar storage event a la homepage en otro tab
+      window.dispatchEvent(new Event("storage"));
+      setShowAddModal(false);
+      setPreview(null);
+    } catch (err) {
+      console.error("savePhotos falló:", err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (

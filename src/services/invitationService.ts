@@ -31,10 +31,16 @@ export function loadInvitationToken(): string | null {
 }
 
 /**
- * Genera un link de invitación con el token
+ * Genera un link de invitación con el token.
+ * NEXT_PUBLIC_SITE_URL debe estar configurada en Vercel como
+ * la URL de producción (ej: https://matthew-journal.vercel.app).
+ * Si no está definida, usa el origin de la ventana en client (SSR-safe).
  */
 export function generateInvitationLink(token: string): string {
-  return `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/invite/${token}`;
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "");
+  return `${baseUrl}/invite/${token}`;
 }
 
 /**
