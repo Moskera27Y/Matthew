@@ -12,6 +12,7 @@
     "@auth/prisma-adapter": "^2.11.3",
     "@heroicons/react": "^2.2.0",
     "@neondatabase/serverless": "^0.10.4",
+    "@vercel/blob": "^2.8.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "framer-motion": "^13.2.0",
