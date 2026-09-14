@@ -33,12 +33,15 @@ export default function PhotoEditor() {
       form.append("caption", "Foto de Matthew");
       form.append("category", "familia");
       const res = await fetch("/api/upload", { method: "POST", body: form });
+      // Vercel Blob put() devuelve HTTP 201 con JSON {url,...}. El chequeo ">204" viejo
+      // lo salteaba → data quedaba {} → "no se recibió URL de Blob". Forzamos parse en cualquier 2xx.
+      const text = await res.text();
       let data: any = {};
-      if (res.status > 204) { // 204 No Content (success, empty body)
-        try { data = await res.json(); } catch { /* empty body */ }
+      if (text) {
+        try { data = JSON.parse(text); } catch { /* empty body */ }
       }
       if (!res.ok) throw new Error(data?.error || `upload failed (${res.status})`);
-      const blobUrl = data.url || data.src; // endpoint devuelve {url} (Vercel Blob)
+      const blobUrl = data.url || data.src;
       if (!blobUrl) throw new Error("upload OK pero no se recibió URL de Blob");
       setBabyPhoto(blobUrl);
       console.log("[PhotoEditor] foto subida a Blob:", data.id);

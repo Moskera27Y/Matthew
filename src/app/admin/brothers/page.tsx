@@ -65,11 +65,13 @@ function BrotherModal({ brother, onClose, onSave, existing }: ModalProps) {
       payload.append("caption", form.name || "");
       payload.append("category", "familia");
       const res = await fetch("/api/upload", { method: "POST", body: payload });
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error || "upload falló");
-      const blobUrl = data.url || data.src; // endpoint devuelve {url} (Vercel Blob)
+      const text = await res.text();
+      let data: any = {};
+      if (text) try { data = JSON.parse(text); } catch { /* empty body */ }
+      if (!res.ok) throw new Error(data?.error || `upload falló (${res.status})`);
+      const blobUrl = data.url || data.src;
       if (!blobUrl) throw new Error("upload OK pero no se recibió URL de Blob");
-      setForm({ ...form, photoUrl: blobUrl }); // URL de Blob
+      setForm({ ...form, photoUrl: blobUrl });
     } catch (err: any) {
       console.error("upload hermano falló:", err?.message || err);
       alert("Error subiendo foto: " + (err?.message || "inténtalo"));
@@ -181,7 +183,7 @@ function BrotherModal({ brother, onClose, onSave, existing }: ModalProps) {
                 </div>
               )}
             </div>
-            <p className="text-xs text-mist-gray/60 mt-1">Sube archivo desde tu PC. Se guarda como base64.</p>
+            <p className="text-xs text-mist-gray/60 mt-1">Sube archivo desde tu PC. Se guarda en Vercel Blob. Recomendado: 400x400px.</p>
           </div>
 
           {/* Categoría en galería */}\n          <div>

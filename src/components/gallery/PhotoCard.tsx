@@ -38,11 +38,13 @@ export default memo(function PhotoCard({ photo, onClick, index }: PhotoCardProps
         onClick={() => onClick(photo)}
         className="group relative cursor-pointer rounded-xl overflow-hidden border border-mist-gray/10 shadow-subtle hover:shadow-strong transition-all duration-300"
       >
-        {/* Aspect ratio placeholder */}\n        <div className="relative aspect-[4/3] overflow-hidden bg-blush-pink/10">
+        {/* Aspect ratio placeholder */}
+        <div className="relative aspect-[4/3] overflow-hidden bg-blush-pink/10">
           {!imgLoaded && (
             <div className="absolute inset-0 bg-gradient-to-br from-blush-pink/20 to-soft-cream animate-pulse rounded-xl" />
           )}
-          {/* <img> nativo — robusto con fotos base64/local */}\n          <img
+          {/* <img> nativo — robusto con fotos base64/local */}
+          <img
             src={photo.src}
             alt={photo.alt}
             className={`object-cover w-full h-full transition-all duration-500 group-hover:scale-105 ${
@@ -52,14 +54,19 @@ export default memo(function PhotoCard({ photo, onClick, index }: PhotoCardProps
             onLoad={() => setImgLoaded(true)}
           />
 
-          {/* Hover overlay */}\n          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          {/* Hover overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-          {/* Meta overlay (bottom) */}\n          <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 text-white">
+          {/* Meta overlay (bottom): caption + categoría + fecha + edad */}
+          <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 text-white">
             <p className="text-xs font-light opacity-90 line-clamp-1">
               {photo.caption || photo.alt}
             </p>
-            <div className="flex justify-between text-xs opacity-80 mt-1">
+            <div className="flex justify-between items-center text-xs opacity-80 mt-1">
               <span>{formatDateES(photo.date).slice(0, 11)}</span>
+              <span className="px-2 py-0.5 rounded bg-white/15 backdrop-blur-sm">
+                {photoCategoryLabels[photo.category] || photo.category}
+              </span>
               <span>{ageStr}</span>
             </div>
           </div>

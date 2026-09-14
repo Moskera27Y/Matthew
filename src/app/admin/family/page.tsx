@@ -70,9 +70,13 @@ function FamilyMemberForm({
                     form.append("caption", relationship || "");
                     form.append("category", "familia");
                     const res = await fetch("/api/upload", { method: "POST", body: form });
-                    const data = await res.json();
-                    if (!data.ok) throw new Error(data.error || "upload falló");
-                    setPhotoUrl(data.src); // URL de Blob
+                    const text = await res.text();
+                    let data: any = {};
+                    if (text) try { data = JSON.parse(text); } catch { /* empty */ }
+                    if (!res.ok) throw new Error(data?.error || `upload falló (${res.status})`);
+                    const blobUrl = data.url || data.src;
+                    if (!blobUrl) throw new Error("upload OK pero no se recibió URL de Blob");
+                    setPhotoUrl(blobUrl);
                   } catch (err: any) {
                     console.error("upload familiar falló:", err?.message || err);
                     alert("Error subiendo foto: " + (err?.message || "inténtalo"));

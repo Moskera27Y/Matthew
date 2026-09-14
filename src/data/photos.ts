@@ -14,8 +14,19 @@ function fmtMonth(date: Date): string {
   return format(date, "MMMM yyyy", { locale: es });
 }
 
-// Imágenes placeholder locales (SVG) - una sola imagen reutilizable
+// URLs de placeholder SVG locales — una por categoría (reutilizables, sin fetch externo)
+// Nota: solo existe 1 SVG físico; el resto son alias para que PHOTOS tenga src definido
+// y no dispare React #418 / "src undefined".
 export const PLACEHOLDER_URLS = [
+  "/images/placeholder-gallery.svg",
+  "/images/placeholder-gallery.svg",
+  "/images/placeholder-gallery.svg",
+  "/images/placeholder-gallery.svg",
+  "/images/placeholder-gallery.svg",
+  "/images/placeholder-gallery.svg",
+  "/images/placeholder-gallery.svg",
+  "/images/placeholder-gallery.svg",
+  "/images/placeholder-gallery.svg",
   "/images/placeholder-gallery.svg",
 ];
 
