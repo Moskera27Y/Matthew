@@ -20,6 +20,7 @@ model Brother {
   photoUrl  String?
   message   String?
   category  String   @default("primos")
+  order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
