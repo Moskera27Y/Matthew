@@ -38,6 +38,8 @@ model Event {
   thankYouMessage  String?
   type             String   @default("bautizo")
   photoUrl         String?
+  isPublic         Boolean  @default(true)
+  isEnabled        Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -46,10 +48,16 @@ model Event {
 
 model Photo {
   id        String   @id @default(uuid())
-  src       String   // puede ser base64 (data:image/...) o URL cloud
+  src       String   // URL Vercel Blob (no base64 en DB)
   alt       String?
   caption   String?
-  category  String   @default("familia")
+  category  String   @default("family")
+  date      String   @default("2026-07-31") // ISO YYYY-MM-DD (requerido por Gallery/PhotoCard)
+  babyAgeDays   Int?
+  babyAgeWeeks  Int?
+  babyAgeMonths Int?
+  babyAgeYears  Int?
+  order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -62,7 +70,17 @@ model Milestone {
   date      String
   description String?
   icon      String?
+  category  String   @default("milestone")
+  order     Int      @default(0)
+  location  String?
+  parentNote String?
+  images    String[] @default([])
+  babyAgeDays   Int?
+  babyAgeWeeks  Int?
+  babyAgeMonths Int?
+  babyAgeYears  Int?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model FamilyMember {
@@ -74,6 +92,7 @@ model FamilyMember {
   quote       String?
   order       Int      @default(0)
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model GrowthRecord {

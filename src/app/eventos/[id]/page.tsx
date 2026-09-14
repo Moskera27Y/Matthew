@@ -10,6 +10,8 @@ import { findEventByIdServer } from "@/lib/serverState";
 import { DEFAULT_EVENT } from "@/types/event";
 import EventInvitationLoader from "@/components/events/EventInvitationLoader";
 
+export const dynamic = "force-dynamic";
+
 interface PageProps {
   params: Promise<{ id: string }>;
 }

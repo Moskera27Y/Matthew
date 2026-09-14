@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { neon } from "@neondatabase/serverless";
 import { DEFAULT_BROTHERS } from "@/types/brother";
 import { DEFAULT_EVENT } from "@/types/event";
@@ -43,8 +44,8 @@ async function ensureSeeded(sql: ReturnType<typeof neon>) {
   const ec = (await sql`SELECT COUNT(*)::int AS c FROM "Event"` as any[])[0]?.c ?? "0";
   if (Number(ec) === 0) {
     const { id, title, date, time, location, address, description, thankYouMessage, type: etype, photoUrl } = DEFAULT_EVENT;
-    await sql`INSERT INTO "Event" (id, title, date, time, location, address, description, "thankYouMessage", type, "photoUrl", "createdAt", "updatedAt")
-                VALUES (${id}, ${title}, ${date}, ${time}, ${location}, ${address}, ${description}, ${thankYouMessage}, ${etype || "bautizo"}, ${photoUrl}, NOW(), NOW())
+    await sql`INSERT INTO "Event" (id, title, date, time, location, address, description, "thankYouMessage", type, "photoUrl", "isPublic", "isEnabled", "createdAt", "updatedAt")
+                VALUES (${id}, ${title}, ${date}, ${time}, ${location}, ${address}, ${description}, ${thankYouMessage}, ${etype || "bautizo"}, ${photoUrl}, true, true, NOW(), NOW())
                 ON CONFLICT (id) DO UPDATE SET title=${title}, date=${date}, time=${time}, location=${location}, address=${address}, description=${description}, "thankYouMessage"=${thankYouMessage}`;
   }
   // PHOTOS: NO seedear placeholders (confunde al user). La galería usa el fallback
@@ -89,6 +90,7 @@ export async function GET() {
     const eventRows: any[] = (await sql`SELECT * FROM "Event" ORDER BY "createdAt" DESC LIMIT 1`) as any[];
     const event = (eventRows[0] && {
       id: eventRows[0].id, title: eventRows[0].title, date: eventRows[0].date, time: eventRows[0].time || "", location: eventRows[0].location || "", address: eventRows[0].address || "", description: eventRows[0].description || "", thankYouMessage: eventRows[0].thankYouMessage || "", type: eventRows[0].type, photoUrl: eventRows[0].photoUrl || "",
+      isPublic: eventRows[0].isPublic ?? true, isEnabled: eventRows[0].isEnabled ?? true,
     }) || DEFAULT_EVENT;
     const photos: any[] = (await sql`SELECT * FROM "Photo" ORDER BY "createdAt" DESC`) as any[];
     const milestones: any[] = (await sql`SELECT * FROM "Milestone" ORDER BY date ASC`) as any[];
@@ -97,8 +99,18 @@ export async function GET() {
     const stories: any[] = (await sql`SELECT * FROM "Story" ORDER BY "createdAt" DESC`) as any[];
     const settingsRows: any[] = (await sql`SELECT key, value FROM "Setting"`) as any[];
     const brothersMapped = brothers.map((r: any) => ({ id: r.id, name: r.name, role: r.role, age: r.age, photoUrl: r.photoUrl, message: r.message, category: r.category, order: r.order }));
-    const photosMapped = photos.map((r: any) => ({ id: r.id, src: r.src, alt: r.alt, caption: r.caption, category: r.category }));
-    const milestonesMapped = milestones.map((r: any) => ({ id: r.id, title: r.title, date: r.date, description: r.description, icon: r.icon }));
+    const photosMapped = photos.map((r: any) => ({
+      id: r.id, src: r.src, alt: r.alt, caption: r.caption, category: r.category,
+      date: r.date || "2026-07-31",
+      babyAge: { days: r.babyAgeDays ?? 0, weeks: r.babyAgeWeeks ?? 0, months: r.babyAgeMonths ?? 0, years: r.babyAgeYears ?? 0 },
+      order: r.order ?? 0,
+    }));
+    const milestonesMapped = milestones.map((r: any) => ({
+      id: r.id, title: r.title, date: r.date, description: r.description, icon: r.icon,
+      category: r.category || "milestone", order: r.order ?? 0,
+      location: r.location || "", parentNote: r.parentNote || "", images: r.images || [],
+      babyAge: { days: r.babyAgeDays ?? 0, weeks: r.babyAgeWeeks ?? 0, months: r.babyAgeMonths ?? 0, years: r.babyAgeYears ?? 0 },
+    }));
     const growthMapped = growth.map((r: any) => ({
       id: r.id, date: r.date,
       babyAge: { days: r.babyAgeDays || 0, weeks: r.babyAgeWeeks || 0, months: r.babyAgeMonths || 0, years: r.babyAgeYears || 0 },
@@ -146,8 +158,8 @@ export async function POST(req: Request) {
     if (body.brothers) {
       for (const b of body.brothers as any[]) {
         await sql`INSERT INTO "Brother" (id, name, role, age, "photoUrl", message, category, "order", "createdAt", "updatedAt")
-                    VALUES (${b.id || `b-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`}, ${b.name}, ${b.role}, ${b.age}, ${b.photoUrl || ""}, ${b.message || ""}, ${b.category || "brother"}, ${b.order || 0}, NOW(), NOW())
-                    ON CONFLICT (id) DO UPDATE SET name=${b.name}, role=${b.role}, age=${b.age}, "photoUrl"=${b.photoUrl || ""}, message=${b.message || ""}, category=${b.category || "brother"}, "order"=${b.order || 0}`;
+                    VALUES (${b.id || `b-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`}, ${b.name}, ${b.role}, ${b.age}, ${b.photoUrl || ""}, ${b.message || ""}, ${b.category || "primos"}, ${b.order || 0}, NOW(), NOW())
+                    ON CONFLICT (id) DO UPDATE SET name=${b.name}, role=${b.role}, age=${b.age}, "photoUrl"=${b.photoUrl || ""}, message=${b.message || ""}, category=${b.category || "primos"}, "order"=${b.order || 0}`;
       }
     }
 
@@ -155,26 +167,29 @@ export async function POST(req: Request) {
     if (body.event) {
       const e = body.event;
       const eid = e.id || DEFAULT_EVENT.id;
-      await sql`INSERT INTO "Event" (id, title, date, time, location, address, description, "thankYouMessage", type, "photoUrl", "createdAt", "updatedAt")
-                  VALUES (${eid}, ${e.title}, ${e.date}, ${e.time || ""}, ${e.location || ""}, ${e.address || ""}, ${e.description || ""}, ${e.thankYouMessage || ""}, ${e.type || "bautizo"}, ${e.photoUrl || ""}, NOW(), NOW())
-                  ON CONFLICT (id) DO UPDATE SET title=${e.title}, date=${e.date}, time=${e.time || ""}, location=${e.location || ""}, address=${e.address || ""}, description=${e.description || ""}, "thankYouMessage"=${e.thankYouMessage || ""}, type=${e.type || "bautizo"}, "photoUrl"=${e.photoUrl || ""}`;
+      await sql`INSERT INTO "Event" (id, title, date, time, location, address, description, "thankYouMessage", type, "photoUrl", "isPublic", "isEnabled", "createdAt", "updatedAt")
+                  VALUES (${eid}, ${e.title}, ${e.date}, ${e.time || ""}, ${e.location || ""}, ${e.address || ""}, ${e.description || ""}, ${e.thankYouMessage || ""}, ${e.type || "bautizo"}, ${e.photoUrl || ""}, ${e.isPublic ?? true}, ${e.isEnabled ?? true}, NOW(), NOW())
+                  ON CONFLICT (id) DO UPDATE SET title=${e.title}, date=${e.date}, time=${e.time || ""}, location=${e.location || ""}, address=${e.address || ""}, description=${e.description || ""}, "thankYouMessage"=${e.thankYouMessage || ""}, type=${e.type || "bautizo"}, "photoUrl"=${e.photoUrl || ""}, "isPublic"=${e.isPublic ?? true}, "isEnabled"=${e.isEnabled ?? true}`;
     }
 
     // PHOTOS: upsert (NO sync-delete — borrado via DELETE explícito)
     if (body.photos) {
       for (const p of body.photos as any[]) {
-        await sql`INSERT INTO "Photo" (id, src, alt, caption, category, "createdAt", "updatedAt")
-                    VALUES (${p.id || `p-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`}, ${p.src}, ${p.alt || ""}, ${p.caption || ""}, ${p.category || "familia"}, NOW(), NOW())
-                    ON CONFLICT (id) DO UPDATE SET src=${p.src}, alt=${p.alt || ""}, caption=${p.caption || ""}, category=${p.category || "familia"}`;
+        const pba = p.babyAge || { days: 0, weeks: 0, months: 0, years: 0 };
+        const pcat = p.category === "familia" ? "family" : (p.category || "family");
+        await sql`INSERT INTO "Photo" (id, src, alt, caption, category, date, "babyAgeDays", "babyAgeWeeks", "babyAgeMonths", "babyAgeYears", "order", "createdAt", "updatedAt")
+                    VALUES (${p.id || `p-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`}, ${p.src}, ${p.alt || ""}, ${p.caption || ""}, ${pcat}, ${p.date || "2026-07-31"}, ${pba.days ?? null}, ${pba.weeks ?? null}, ${pba.months ?? null}, ${pba.years ?? null}, ${p.order ?? 0}, NOW(), NOW())
+                    ON CONFLICT (id) DO UPDATE SET src=${p.src}, alt=${p.alt || ""}, caption=${p.caption || ""}, category=${pcat}, date=${p.date || "2026-07-31"}, "babyAgeDays"=${pba.days ?? null}, "babyAgeWeeks"=${pba.weeks ?? null}, "babyAgeMonths"=${pba.months ?? null}, "babyAgeYears"=${pba.years ?? null}, "order"=${p.order ?? 0}`;
       }
     }
 
     // MILESTONES: upsert
     if (body.milestones) {
       for (const m of body.milestones as any[]) {
-        await sql`INSERT INTO "Milestone" (id, title, date, description, icon, "createdAt", "updatedAt")
-                    VALUES (${m.id || `m-${Date.now()}`}, ${m.title}, ${m.date}, ${m.description || ""}, ${m.icon || ""}, NOW(), NOW())
-                    ON CONFLICT (id) DO UPDATE SET title=${m.title}, date=${m.date}, description=${m.description || ""}, icon=${m.icon || ""}`;
+        const mba = m.babyAge || { days: 0, weeks: 0, months: 0, years: 0 };
+        await sql`INSERT INTO "Milestone" (id, title, date, description, icon, category, "order", location, "parentNote", images, "babyAgeDays", "babyAgeWeeks", "babyAgeMonths", "babyAgeYears", "createdAt", "updatedAt")
+                    VALUES (${m.id || `m-${Date.now()}`}, ${m.title}, ${m.date}, ${m.description || ""}, ${m.icon || ""}, ${m.category || "milestone"}, ${m.order ?? 0}, ${m.location || ""}, ${m.parentNote || ""}, ${m.images || []}, ${mba.days ?? null}, ${mba.weeks ?? null}, ${mba.months ?? null}, ${mba.years ?? null}, NOW(), NOW())
+                    ON CONFLICT (id) DO UPDATE SET title=${m.title}, date=${m.date}, description=${m.description || ""}, icon=${m.icon || ""}, category=${m.category || "milestone"}, "order"=${m.order ?? 0}, location=${m.location || ""}, "parentNote"=${m.parentNote || ""}, images=${m.images || []}, "babyAgeDays"=${mba.days ?? null}, "babyAgeWeeks"=${mba.weeks ?? null}, "babyAgeMonths"=${mba.months ?? null}, "babyAgeYears"=${mba.years ?? null}`;
       }
     }
 
@@ -207,13 +222,18 @@ export async function POST(req: Request) {
     // STORIES: upsert
     if (body.stories) {
       for (const s of body.stories as any[]) {
-        await sql`INSERT INTO "Story" (id, title, content, date, "photoUrl", "createdAt")
-                    VALUES (${s.id}, ${s.title}, ${s.content || ""}, ${s.date || ""}, ${s.photoUrl || ""}, NOW())
-                    ON CONFLICT (id) DO UPDATE SET title=${s.title}, content=${s.content || ""}, date=${s.date || ""}, "photoUrl"=${s.photoUrl || ""}`;
+        await sql`INSERT INTO "Story" (id, title, content, date, "photoUrl", "createdAt", "updatedAt")
+                    VALUES (${s.id}, ${s.title}, ${s.content || ""}, ${s.date || ""}, ${s.photoUrl || ""}, NOW(), NOW())
+                    ON CONFLICT (id) DO UPDATE SET title=${s.title}, content=${s.content || ""}, date=${s.date || ""}, "photoUrl"=${s.photoUrl || ""}, "updatedAt"=NOW()`;
       }
     }
 
     _seeded = true;
+    try {
+      revalidatePath("/");
+      revalidatePath("/eventos");
+      revalidatePath("/invite");
+    } catch { /* revalidate solo disponible en request server — no crítico */ }
     return NextResponse.json({ ok: true, source: "server-neon" });
   } catch (e: any) {
     console.error("[api/admin/state] POST failed:", e?.message || e);

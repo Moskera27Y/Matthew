@@ -4,13 +4,14 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Edit, Trash2, Save, X } from "lucide-react";
-import { loadMilestones, saveMilestones } from "@/services/adminService";
+import { loadMilestones, saveMilestones, deleteItem } from "@/services/adminService";
 import { MILESTONES } from "@/data/milestones";
 import { Milestone } from "@/types/milestone";
 import AdminLayout from "@/components/admin/AdminLayout";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import { formatDateES } from "@/lib/utils";
+import { BIRTH_DATE } from "@/lib/constants";
 
 export default function AdminMilestones() {
   const [milestones, setMilestones] = useState<Milestone[]>(MILESTONES);
@@ -40,6 +41,8 @@ export default function AdminMilestones() {
     const updatedList = milestones.filter((m) => m.id !== id);
     setMilestones(updatedList);
     try {
+      // DELETE explícito: el POST es upsert-only y nunca borra (hitos borrados reaparecían)
+      if (!id.startsWith("temp-")) await deleteItem("milestones", id);
       await saveMilestones(updatedList);
     } catch (err: any) {
       alert("No se eliminó el hito: " + (err?.message || "error"));
@@ -70,7 +73,7 @@ export default function AdminMilestones() {
 
     const handleSave = () => {
       const daysDiff = Math.floor(
-        (new Date(data.date).getTime() - new Date(2026, 6, 31).getTime()) /
+        (new Date(data.date).getTime() - BIRTH_DATE.getTime()) /
           (1000 * 60 * 60 * 24)
       );
       const updated = {

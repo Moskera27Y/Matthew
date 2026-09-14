@@ -21,7 +21,7 @@ export async function getEventServer(): Promise<EventDetails> {
       id: r.id, title: r.title, date: r.date, time: r.time || "",
       location: r.location || "", address: r.address || "",
       description: r.description || "", thankYouMessage: r.thankYouMessage || "",
-      type: r.type, photoUrl: r.photoUrl || "", isPublic: r.isPublic ?? true,
+      type: r.type, photoUrl: r.photoUrl || "", isPublic: r.isPublic ?? true, isEnabled: r.isEnabled ?? true,
     };
   } catch (e: any) {
     console.error("[serverState] getEventServer failed:", e?.message);
@@ -41,7 +41,7 @@ export async function findEventByIdServer(id: string): Promise<EventDetails | nu
       id: r.id, title: r.title, date: r.date, time: r.time || "",
       location: r.location || "", address: r.address || "",
       description: r.description || "", thankYouMessage: r.thankYouMessage || "",
-      type: r.type, photoUrl: r.photoUrl || "", isPublic: r.isPublic ?? true,
+      type: r.type, photoUrl: r.photoUrl || "", isPublic: r.isPublic ?? true, isEnabled: r.isEnabled ?? true,
     };
   } catch (e: any) {
     console.error("[serverState] findEventByIdServer failed:", e?.message);

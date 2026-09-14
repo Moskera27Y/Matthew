@@ -249,6 +249,7 @@ export default function AdminGallery() {
                       alt="Preview"
                       fill
                       className="object-cover"
+                      unoptimized={preview.includes(".blob.vercel-storage.com")}
                     />
                   )}
                   <button

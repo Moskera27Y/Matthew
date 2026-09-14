@@ -63,7 +63,7 @@ function BrotherModal({ brother, onClose, onSave, existing }: ModalProps) {
       payload.append("file", file);
       payload.append("alt", form.name || "Foto hermano");
       payload.append("caption", form.name || "");
-      payload.append("category", "familia");
+      payload.append("category", "family");
       const res = await fetch("/api/upload", { method: "POST", body: payload });
       const text = await res.text();
       let data: any = {};

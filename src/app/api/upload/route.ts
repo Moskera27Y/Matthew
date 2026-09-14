@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     let ext = "webp";
     let alt = "";
     let caption = "";
-    let category = "familia";
+    let category = "family";
 
     const type = req.headers.get("content-type") || "";
 
@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
       ext = fileExt(file.name || "");
       alt = (form.get("alt") as string) || "";
       caption = (form.get("caption") as string) || "";
-      category = (form.get("category") as string) || "familia";
+      const rawCat = (form.get("category") as string) || "family";
+      category = rawCat === "familia" ? "family" : rawCat;
     } else {
       const body = await req.json();
       const { src, alt: a, caption: c, category: cat }: { src: string; alt?: string; caption?: string; category?: string } = body;
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
       ext = parsed.mime.replace("image/", "").replace("jpeg", "jpg");
       alt = a || "";
       caption = c || "";
-      category = cat || "familia";
+      category = cat === "familia" ? "family" : (cat || "family");
     }
 
     if (buffer.length > MAX_BYTES) {

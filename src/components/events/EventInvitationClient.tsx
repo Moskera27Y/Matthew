@@ -13,8 +13,6 @@ import {
   Share2,
   Download,
   ArrowLeft,
-  Star,
-  Gift,
 } from "lucide-react";
 import { EventDetails } from "@/types/event";
 import { formatDateES } from "@/lib/utils";

@@ -16,8 +16,11 @@ interface PhotoCardProps {
 
 export default memo(function PhotoCard({ photo, onClick, index }: PhotoCardProps) {
   const [imgLoaded, setImgLoaded] = useState(false);
-  const age = calculateAge(new Date(photo.date));
-  const ageStr = `${age.weeks}w ${age.days % 7}d`;
+  const safeDate = photo.date || "2026-07-31";
+  const age = calculateAge(new Date(safeDate));
+  const w = Number.isFinite(age.weeks) ? age.weeks : 0;
+  const d = Number.isFinite(age.days) ? age.days % 7 : 0;
+  const ageStr = `${w}w ${d}d`;
 
   return (
     <motion.div

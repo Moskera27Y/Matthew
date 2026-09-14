@@ -8,6 +8,8 @@ import { getEventServer, getSettingsServer } from "@/lib/serverState";
 import { validateInvitationToken } from "@/services/invitationService";
 import { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+
 interface InvitePageProps {
   params: Promise<{ token: string }>;
 }

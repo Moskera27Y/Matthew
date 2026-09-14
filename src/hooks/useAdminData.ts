@@ -45,9 +45,7 @@ export function useAdminData() {
   const loadAll = useCallback(async (attempt = 1) => {
     setIsLoading(true);
     try {
-      // fetch a Neon con timeout (Neon free puede tardar al despertar → retry)
-      const controller = new AbortController();
-      const t = setTimeout(() => controller.abort(), 8000); // 8s timeout serverless
+      // Neon free puede tardar al despertar (cold-start) → retry 1 vez
       const [m, p, g, s, b, f, e, st] = await Promise.all([
         loadMilestones(),
         loadPhotos(),
@@ -57,7 +55,7 @@ export function useAdminData() {
         loadFamily(),
         loadEvent(),
         loadSettings(),
-      ]).finally(() => clearTimeout(t));
+      ]);
       // Sólo actualizo state si REALMENTE trajeron datos de Neon (no defaults del catch interno)
       // loadMilestones etc. ya caen a localStorage/DEFAULT en su propio catch → aquí propagamos.
       if (m) setMilestones(m);
@@ -82,8 +80,11 @@ export function useAdminData() {
 
   useEffect(() => {
     loadAll();
-    const handleStorageChange = (e: StorageEvent) => {
-      if (Object.values(storageKeys).includes(e.key!)) {
+    const handleStorageChange = (e: StorageEvent | Event) => {
+      // Eventos sintéticos same-tab (new Event("storage") sin key) → recargar siempre.
+      // Eventos cross-tab traen key → solo recargar si es una key admin.
+      const key = (e as StorageEvent).key;
+      if (key == null || Object.values(storageKeys).includes(key)) {
         loadAll();
       }
     };

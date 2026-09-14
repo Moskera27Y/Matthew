@@ -68,7 +68,7 @@ function FamilyMemberForm({
                     form.append("file", file);
                     form.append("alt", name || "Foto");
                     form.append("caption", relationship || "");
-                    form.append("category", "familia");
+                    form.append("category", "family");
                     const res = await fetch("/api/upload", { method: "POST", body: form });
                     const text = await res.text();
                     let data: any = {};

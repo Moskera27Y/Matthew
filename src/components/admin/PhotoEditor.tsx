@@ -31,7 +31,7 @@ export default function PhotoEditor() {
       form.append("file", file);
       form.append("alt", "Foto de Matthew");
       form.append("caption", "Foto de Matthew");
-      form.append("category", "familia");
+      form.append("category", "family");
       const res = await fetch("/api/upload", { method: "POST", body: form });
       // Vercel Blob put() devuelve HTTP 201 con JSON {url,...}. El chequeo ">204" viejo
       // lo salteaba → data quedaba {} → "no se recibió URL de Blob". Forzamos parse en cualquier 2xx.
