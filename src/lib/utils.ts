@@ -12,8 +12,14 @@ export function calculateAge(now: Date = new Date()) {
   return { days, weeks, months, years };
 }
 
-export function formatDateES(date: Date | string) {
-  return format(new Date(date), "d 'de' MMMM 'de' yyyy", { locale: es });
+export function formatDateES(date: Date | string | undefined | null) {
+  try {
+    const d = date ? new Date(date) : new Date();
+    if (Number.isNaN(d.getTime())) return "Sin fecha";
+    return format(d, "d 'de' MMMM 'de' yyyy", { locale: es });
+  } catch {
+    return "Sin fecha";
+  }
 }
 
 export function cn(...classes: (string | undefined | false)[]) {

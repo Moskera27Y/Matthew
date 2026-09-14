@@ -26,6 +26,13 @@ export default function LazyImage({
 }: LazyImageProps) {
   const [loaded, setLoaded] = useState(false);
 
+  // Hardenizar: si src es undefined/empty → usar placeholder (evita Next/Image error #418)
+  const safeSrc = src && src.trim() !== ""
+    ? src
+    : "/images/placeholder-image.svg";
+  const safeWidth = width || 500;
+  const safeHeight = height || 500;
+
   return (
     <div className="relative overflow-hidden">
       {!loaded && (
@@ -38,10 +45,10 @@ export default function LazyImage({
         className={className}
       >
         <Image
-          src={src}
-          alt={alt}
-          width={width}
-          height={height}
+          src={safeSrc}
+          alt={alt || "Imagen"}
+          width={safeWidth}
+          height={safeHeight}
           className={`transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
           onLoadingComplete={() => setLoaded(true)}
           priority={priority}
