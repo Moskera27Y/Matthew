@@ -71,8 +71,8 @@ async function ensureSeeded(sql: ReturnType<typeof neon>) {
   if (Number(fc) === 0) {
     for (const f of FAMILY_MEMBERS) {
       const { id, name, relationship, role, photoUrl, quote, order } = f;
-      await sql`INSERT INTO "FamilyMember" (id, name, relationship, role, "photoUrl", quote, "order", "createdAt", "updatedAt")
-                  VALUES (${id}, ${name}, ${relationship || ""}, ${role || ""}, ${photoUrl || ""}, ${quote || ""}, ${order || 0}, NOW(), NOW())
+      await sql`INSERT INTO "FamilyMember" (id, name, relationship, role, "photoUrl", quote, "order", "createdAt")
+                  VALUES (${id}, ${name}, ${relationship || ""}, ${role || ""}, ${photoUrl || ""}, ${quote || ""}, ${order || 0}, NOW())
                   ON CONFLICT (id) DO UPDATE SET name=${name}, relationship=${relationship || ""}, role=${role || ""}, "photoUrl"=${photoUrl || ""}, quote=${quote || ""}, "order"=${order || 0}`;
     }
   }
