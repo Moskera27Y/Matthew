@@ -33,11 +33,11 @@ export default function AdminGallery() {
     return p.category === filter;
   });
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm("¿Eliminar esta foto?")) {
       const updated = photos.filter((p) => p.id !== id);
       setPhotos(updated);
-      savePhotos(updated);
+      try { await savePhotos(updated); } catch (err: any) { console.error("savePhotos delete falló:", err?.message); }
     }
   };
 
@@ -49,23 +49,34 @@ export default function AdminGallery() {
     setTimeout(() => fileInputRef.current?.click(), 100);
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setPreview(ev.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file || !file.type.startsWith("image/")) return;
+    setIsSaving(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("alt", caption || "Foto de Matthew");
+      form.append("caption", caption || "Foto de Matthew");
+      form.append("category", category as string);
+      const res = await fetch("/api/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "upload falló");
+      setPreview(data.src); // URL de Vercel Blob
+    } catch (err: any) {
+      console.error("upload falló:", err?.message || err);
+      alert("No se pudo subir la foto: " + (err?.message || "error desconocido"));
+    } finally {
+      setIsSaving(false);
+      e.target.value = "";
     }
   };
 
-  const handleAddPhoto = () => {
+  const handleAddPhoto = async () => {
     if (!preview) return;
-    setIsSaving(true);
     const newPhoto: Photo = {
       id: `photo-${Date.now()}`,
-      src: preview,
+      src: preview, // URL de Blob (no base64)
       alt: caption || "Foto de Matthew",
       caption: caption || "Foto de Matthew",
       date: new Date().toISOString().split("T")[0],
@@ -76,13 +87,13 @@ export default function AdminGallery() {
     const updated = [newPhoto, ...photos];
     setPhotos(updated);
     try {
-      savePhotos(updated);
+      await savePhotos(updated);
       // Sincronizar storage event a la homepage en otro tab
       window.dispatchEvent(new Event("storage"));
       setShowAddModal(false);
       setPreview(null);
-    } catch (err) {
-      console.error("savePhotos falló:", err);
+    } catch (err: any) {
+      console.error("savePhotos falló:", err?.message || err);
     } finally {
       setIsSaving(false);
     }

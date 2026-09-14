@@ -24,37 +24,46 @@ export default function PhotoEditor() {
     };
   }, []);
 
-  const loadImage = async (base64: string) => {
-    setBabyPhoto(base64);
+  const loadImage = async (file: File) => {
     try {
-      // Subir a server (DB Neon) para que se vea en CUALQUIER dispositivo
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ src: base64, alt: "Foto de Matthew", category: "familia" }),
-      });
+      // Subir a server: FormData → /api/upload → Vercel Blob → URL pública
+      const form = new FormData();
+      form.append("file", file);
+      form.append("alt", "Foto de Matthew");
+      form.append("caption", "Foto de Matthew");
+      form.append("category", "familia");
+      const res = await fetch("/api/upload", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "upload failed");
-      console.log("[PhotoEditor] foto subida a server:", data.id);
+      const blobUrl = data.src; // URL pública de Vercel Blob
+      setBabyPhoto(blobUrl);
+      console.log("[PhotoEditor] foto subida a Blob:", data.id);
+      // Guardar SOLO la URL en settings (Neon). Nada de base64.
+      const prev = await loadSettings();
+      await saveSettings({ ...prev, babyPhoto: blobUrl });
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
     } catch (e) {
-      console.warn("[PhotoEditor] upload a server falló → localStorage", (e as Error)?.message?.slice(0, 80));
+      console.warn("[PhotoEditor] upload falló → localStorage:", (e as Error)?.message?.slice(0, 80));
+      // Fallback offline: leer base64 LOCALMENTE (no persistir en Neon)
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const b64 = ev.target?.result as string;
+        setBabyPhoto(b64);
+        const prevSettings = JSON.parse(localStorage.getItem("mj_admin_settings") || "{}");
+        localStorage.setItem("mj_admin_settings", JSON.stringify({ ...prevSettings, babyPhoto: b64 }));
+        setIsSaved(true);
+        setTimeout(() => setIsSaved(false), 2000);
+      };
+      reader.readAsDataURL(file);
     }
-    // Mirror a settings (localStorage fallback)
-    const prev = await loadSettings();
-    await saveSettings({ ...prev, babyPhoto: base64 });
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2000);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const base64 = ev.target?.result as string;
-      loadImage(base64);
-    };
-    reader.readAsDataURL(file);
+    loadImage(file);
+    e.target.value = "";
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -62,9 +71,7 @@ export default function PhotoEditor() {
     setDragOver(false);
     const file = e.dataTransfer.files?.[0];
     if (!file || !file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => loadImage(ev.target?.result as string);
-    reader.readAsDataURL(file);
+    loadImage(file);
   };
 
   const handleRemovePhoto = async () => {

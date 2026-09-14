@@ -60,14 +60,23 @@ function FamilyMemberForm({
                 const fileInput = document.createElement("input");
                 fileInput.type = "file";
                 fileInput.accept = "image/*";
-                fileInput.onchange = () => {
+                fileInput.onchange = async () => {
                   const file = fileInput.files?.[0];
                   if (!file) return;
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    setPhotoUrl(reader.result as string);
-                  };
-                  reader.readAsDataURL(file);
+                  try {
+                    const form = new FormData();
+                    form.append("file", file);
+                    form.append("alt", name || "Foto");
+                    form.append("caption", relationship || "");
+                    form.append("category", "familia");
+                    const res = await fetch("/api/upload", { method: "POST", body: form });
+                    const data = await res.json();
+                    if (!data.ok) throw new Error(data.error || "upload falló");
+                    setPhotoUrl(data.src); // URL de Blob
+                  } catch (err: any) {
+                    console.error("upload familiar falló:", err?.message || err);
+                    alert("Error subiendo foto: " + (err?.message || "inténtalo"));
+                  }
                 };
                 fileInput.click();
               }}
@@ -168,27 +177,36 @@ export default function AdminFamily() {
   }, []);
 
   const handleSave = useCallback(
-    (updated: FamilyMember) => {
+    async (updated: FamilyMember) => {
       const updatedList = members.map((m) =>
         m.id === updated.id ? updated : m
       );
       setMembers(updatedList);
-      saveFamily(updatedList);
+      try {
+        await saveFamily(updatedList);
+      } catch (err: any) {
+        console.error("[AdminFamily] saveFamily falló:", err?.message || err);
+        alert("Error guardando: " + (err?.message || "inténtalo"));
+      }
       setEditingId(null);
       console.log("[AdminFamily] Saved:", updated.name);
     },
     [members],
   );
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm("¿Eliminar a este miembro?")) {
       const updated = members.filter((m) => m.id !== id);
       setMembers(updated);
-      saveFamily(updated);
+      try {
+        await saveFamily(updated);
+      } catch (err: any) {
+        console.error("[AdminFamily] delete saveFamily falló:", err?.message || err);
+      }
     }
   };
 
-  const handleAddNew = () => {
+  const handleAddNew = async () => {
     const newMember: FamilyMember = {
       id: `temp-${Date.now()}`,
       name: "",
@@ -198,7 +216,11 @@ export default function AdminFamily() {
     };
     const updated = [newMember, ...members];
     setMembers(updated);
-    saveFamily(updated);
+    try {
+      await saveFamily(updated);
+    } catch (err: any) {
+      console.error("[AdminFamily] addNew saveFamily falló:", err?.message || err);
+    }
     setEditingId(newMember.id);
     console.log("[AdminFamily] Added new member:", newMember.id);
   };

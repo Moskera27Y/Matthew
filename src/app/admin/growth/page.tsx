@@ -129,24 +129,33 @@ export default function AdminGrowth() {
     loadGrowth().then(setRecords).catch(() => setRecords([]));
   }, []);
 
-  const handleSave = (updated: GrowthRecord) => {
+  const handleSave = async (updated: GrowthRecord) => {
     const updatedList = records.map((r) =>
       r.id === updated.id ? updated : r
     );
     setRecords(updatedList);
-    saveGrowth(updatedList);
+    try {
+      await saveGrowth(updatedList);
+    } catch (err: any) {
+      console.error("[AdminGrowth] saveGrowth falló:", err?.message || err);
+      alert("Error guardando: " + (err?.message || "inténtalo"));
+    }
     setEditingId(null);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm("¿Eliminar este registro?")) {
       const updated = records.filter((r) => r.id !== id);
       setRecords(updated);
-      saveGrowth(updated);
+      try {
+        await saveGrowth(updated);
+      } catch (err: any) {
+        console.error("[AdminGrowth] delete saveGrowth falló:", err?.message || err);
+      }
     }
   };
 
-  const handleAddNew = () => {
+  const handleAddNew = async () => {
     const newRecord: GrowthRecord = {
       id: `temp-${Date.now()}`,
       date: new Date().toISOString().split("T")[0],
@@ -158,7 +167,11 @@ export default function AdminGrowth() {
     };
     const updated = [newRecord, ...records];
     setRecords(updated);
-    saveGrowth(updated);
+    try {
+      await saveGrowth(updated);
+    } catch (err: any) {
+      console.error("[AdminGrowth] addNew saveGrowth falló:", err?.message || err);
+    }
     setEditingId(newRecord.id);
   };
 

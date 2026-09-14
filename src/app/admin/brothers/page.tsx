@@ -55,14 +55,24 @@ function BrotherModal({ brother, onClose, onSave, existing }: ModalProps) {
     ...brother,
   });
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setForm({ ...form, photoUrl: ev.target?.result as string });
-    };
-    reader.readAsDataURL(file);
+    try {
+      const payload = new FormData();
+      payload.append("file", file);
+      payload.append("alt", form.name || "Foto hermano");
+      payload.append("caption", form.name || "");
+      payload.append("category", "familia");
+      const res = await fetch("/api/upload", { method: "POST", body: payload });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "upload falló");
+      setForm({ ...form, photoUrl: data.src }); // URL de Blob
+    } catch (err: any) {
+      console.error("upload hermano falló:", err?.message || err);
+      alert("Error subiendo foto: " + (err?.message || "inténtalo"));
+    }
+    e.target.value = "";
   };
 
   const handleSubmit = () => {
