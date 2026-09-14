@@ -12,11 +12,16 @@ function calcBabyAge(targetDate: Date): { days: number; weeks: number; months: n
   return { days, weeks, months, years };
 }
 
-function ageStr(age: { days: number; weeks: number; months: number; years: number }): string {
-  if (age.years > 0) return `${age.years}a ${age.months}m`;
-  if (age.months > 0) return `${age.months}m ${age.weeks}w`;
-  if (age.weeks > 0) return `${age.weeks}w ${age.days}d`;
-  return `${age.days}d`;
+function ageStr(age?: { days?: number; weeks?: number; months?: number; years?: number } | null): string {
+  if (!age) return "?";
+  const years = age.years || 0;
+  const months = age.months || 0;
+  const weeks = age.weeks || 0;
+  const days = age.days || 0;
+  if (years > 0) return `${years}a ${months}m`;
+  if (months > 0) return `${months}m ${weeks}w`;
+  if (weeks > 0) return `${weeks}w ${days}d`;
+  return `${days}d`;
 }
 
 export const MILESTONES: Milestone[] = [
