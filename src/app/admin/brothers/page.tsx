@@ -16,7 +16,12 @@ import {
 import AdminLayout from "@/components/admin/AdminLayout";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
-import { Brother, BrotherRole } from "@/types/brother";
+import {
+  Brother,
+  BrotherRole,
+  BrotherCategory,
+  categoryLabels,
+} from "@/types/brother";
 import { loadBrothers, saveBrothers } from "@/services/adminService";
 
 // Mapa de etiquetas legibles para el role
@@ -41,6 +46,7 @@ function BrotherModal({ brother, onClose, onSave, existing }: ModalProps) {
   const [form, setForm] = useState<Partial<Brother>>({
     name: "",
     role: "primo",
+    category: "primos",
     age: "",
     photoUrl: "",
     message: "",
@@ -67,6 +73,7 @@ function BrotherModal({ brother, onClose, onSave, existing }: ModalProps) {
       id: brother.id || `b${Date.now()}`,
       name: form.name!,
       role: form.role!,
+      category: form.category!,
       age: form.age,
       photoUrl: form.photoUrl!,
       message: form.message!,
@@ -141,9 +148,8 @@ function BrotherModal({ brother, onClose, onSave, existing }: ModalProps) {
             </div>
           </div>
 
-          {/* Foto */}
-          <div>
-            <label className="block text-xs text-mist-gray mb-1">Foto</label>
+          {/* Foto */}\n          <div>
+            <label className="block text-xs text-mist-gray mb-1">Foto desde PC</label>
             <div className="flex gap-3 items-center">
               <input
                 type="file"
@@ -162,10 +168,25 @@ function BrotherModal({ brother, onClose, onSave, existing }: ModalProps) {
                 </div>
               )}
             </div>
+            <p className="text-xs text-mist-gray/60 mt-1">Sube archivo desde tu PC. Se guarda como base64.</p>
           </div>
 
-          {/* Mensaje (alusión a la foto) */}
-          <div>
+          {/* Categoría en galería */}\n          <div>
+            <label className="block text-xs text-mist-gray mb-1">Categoría en galería</label>
+            <select
+              value={form.category || "primos"}
+              onChange={(e) => setForm({ ...form, category: e.target.value as BrotherCategory })}
+              className="w-full px-4 py-2.5 rounded-xl border border-mist-gray/30 focus:outline-none focus:ring-2 focus:ring-dusty-rose/20 bg-pearl-white text-sm"
+            >
+              <option value="hermanos">Hermanos</option>
+              <option value="primos">Primos</option>
+              <option value="amigos">Amigos</option>
+              <option value="familia">Familia</option>
+            </select>
+            <p className="text-xs text-mist-gray/60 mt-1">Dónde aparecerá en la galería de la homepage.</p>
+          </div>
+
+          {/* Mensaje (alusión a la foto) */}\n          <div>
             <label className="block text-xs text-mist-gray mb-1">Mensaje (alusión a la foto)</label>
             <textarea
               value={form.message || ""}
@@ -226,7 +247,7 @@ export default function AdminBrothers() {
               Hermanos y Primos
             </h1>
             <p className="text-sm text-mist-gray">
-              Galería de fotos de los hermanos y primos de Matthew. Cada foto cuenta su historia.
+              Galería de fotos de los hermanos, primos y amigos de Matthew. Cada foto cuenta su historia.
             </p>
           </div>
           <Button
@@ -253,10 +274,13 @@ export default function AdminBrothers() {
                   <img src={b.photoUrl} alt={b.name} className="object-cover w-full h-full" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-heading-bold text-charcoal">{b.name}</h3>
                     <Badge category="family" size="sm">
                       {roleLabels[b.role] || b.role}
+                    </Badge>
+                    <Badge category="family" size="sm" variant="lavender">
+                      {categoryLabels[b.category]}
                     </Badge>
                   </div>
                   <p className="text-xs text-mist-gray mt-1 max-w-md line-clamp-1">
@@ -292,7 +316,7 @@ export default function AdminBrothers() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <User size={48} className="mx-auto mb-4" />
+              <Users size={48} className="mx-auto mb-4" />
               <p>No hay hermanos registrados aún.</p>
             </motion.div>
           )}
