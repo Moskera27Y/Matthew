@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 import withPWA from "next-pwa";
 
+// generateBuildId dinámico (timestamp) para forzar fresh build en Vercel CI:
+// invalida el build cache agresivamente → el bundle prod SIEMPRE contiene
+// los últimos fixes (evita que Vercel CI sirva un build cacheado con bugs #418).
 const nextConfig: NextConfig = {
+  generateBuildId: async () => `b${Date.now()}`,
   reactStrictMode: true,
   turbopack: {}, // Habilitar Turbopack (Next.js 16)
   images: {
