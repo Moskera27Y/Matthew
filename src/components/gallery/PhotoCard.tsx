@@ -6,7 +6,6 @@ import { Photo } from "@/types/photo";
 import { calculateAge } from "@/lib/utils";
 import { photoCategoryLabels } from "@/data/photos";
 import { formatDateES } from "@/lib/utils";
-import Image from "next/image";
 import { useState, memo } from "react";
 
 interface PhotoCardProps {
@@ -39,28 +38,23 @@ export default memo(function PhotoCard({ photo, onClick, index }: PhotoCardProps
         onClick={() => onClick(photo)}
         className="group relative cursor-pointer rounded-xl overflow-hidden border border-mist-gray/10 shadow-subtle hover:shadow-strong transition-all duration-300"
       >
-        {/* Aspect ratio placeholder */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-blush-pink/10">
+        {/* Aspect ratio placeholder */}\n        <div className="relative aspect-[4/3] overflow-hidden bg-blush-pink/10">
           {!imgLoaded && (
             <div className="absolute inset-0 bg-gradient-to-br from-blush-pink/20 to-soft-cream animate-pulse rounded-xl" />
           )}
-          <Image
+          {/* <img> nativo — robusto con fotos base64/local */}\n          <img
             src={photo.src}
             alt={photo.alt}
-            fill
-            className={`object-cover transition-all duration-500 group-hover:scale-105 ${
+            className={`object-cover w-full h-full transition-all duration-500 group-hover:scale-105 ${
               imgLoaded ? "opacity-100" : "opacity-0"
             }`}
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             loading={index < 12 ? "eager" : "lazy"}
-            onLoadingComplete={() => setImgLoaded(true)}
+            onLoad={() => setImgLoaded(true)}
           />
 
-          {/* Hover overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          {/* Hover overlay */}\n          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-          {/* Meta overlay (bottom) */}
-          <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 text-white">
+          {/* Meta overlay (bottom) */}\n          <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 text-white">
             <p className="text-xs font-light opacity-90 line-clamp-1">
               {photo.caption || photo.alt}
             </p>

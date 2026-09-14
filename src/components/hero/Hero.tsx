@@ -80,7 +80,7 @@ export default function Hero() {
             {/* Age Counter */}
             <AgeCounter />
 
-            {/* CTA */}
+            {/* CTA: botón galería → lleva a la galería de fotos */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -88,24 +88,36 @@ export default function Hero() {
               className="mt-16 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center"
             >
               <GlowEffect glowColor="gold" intensity="strong" className="shadow-card hover:shadow-[0_0_40px_rgba(212,165,154,0.5)]">
-                <Button variant="primary" size="lg" className="w-full sm:w-auto shadow-card">
-                  Conocer su historia
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="w-full sm:w-auto shadow-card"
+                  onClick={() => {
+                    const g = document.getElementById("gallery");
+                    if (g) g.scrollIntoView({ behavior: "smooth" });
+                    else window.location.assign("/#gallery");
+                  }}
+                >
+                  Ver galería de fotos
                 </Button>
               </GlowEffect>
-              <Button variant="ghost" size="lg" className="w-full sm:w-auto">
-                Ver galería
-              </Button>
             </motion.div>
 
-            {/* Decorative Quote */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+            {/* Poema de amor al bebé — reemplaza la sección "Historia" */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.9, duration: 1 }}
-              className="mt-20 text-2xl sm:text-3xl md:text-4xl font-decorative text-center lg:text-left text-taupe/40"
+              className="mt-16 text-center lg:text-left"
             >
-              "Cada día contigo es un regalo que atesoro."
-            </motion.p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-decorative italic bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-500 via-sky-500 to-amber-500 leading-snug">
+                {"Pequeño milagro, latido a latido,"}<br />
+                {"tu risa ilumina hasta el último rincón."}<br />
+                {"Cada arruga, cada suspiro, un verso"}<br />
+                {"que el corazón escribe sin pausa, sin retorno."}<br />
+                {"Matthew, eres el sueño que no quiero despertar."}
+              </p>
+            </motion.div>
           </div>
 
           {/* Foto de Matthew */}

@@ -7,7 +7,6 @@ import { Photo } from "@/types/photo";
 import { calculateAge } from "@/lib/utils";
 import { formatDateES } from "@/lib/utils";
 import { photoCategoryLabels } from "@/data/photos";
-import Image from "next/image";
 import { useEffect } from "react";
 
 interface LightboxProps {
@@ -60,15 +59,12 @@ export default function Lightbox({
           className="relative max-w-5xl max-h-[90vh] mx-4"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Image */}
-          <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
-            <Image
+          {/* Image (nativo <img> — robusto con fotos base64/local) */}
+          <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden">
+            <img
               src={photo.src}
               alt={photo.alt}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 90vw, 80vw"
-              priority
+              className="object-cover w-full h-full"
             />
           </div>
 
