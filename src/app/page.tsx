@@ -12,7 +12,7 @@ import FamilySection from "@/components/family/FamilySection";
 import SectionDivider from "@/components/ui/SectionDivider";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import ShareSection from "@/components/share/ShareSection";
-import AmbientBackground from "@/components/background/AmbientBackground";
+import InteractiveBackground from "@/components/background/InteractiveBackground";
 import { useAdminData } from "@/hooks/useAdminData";
 
 export default function Home() {
@@ -23,7 +23,7 @@ export default function Home() {
     <>
       <Header />
       <main className="relative flex flex-col">
-        <AmbientBackground />
+        <InteractiveBackground />
         <div className="relative z-10 flex flex-col">
         <Hero />
         <SectionDivider variant="wave" />
