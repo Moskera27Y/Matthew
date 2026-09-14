@@ -66,22 +66,28 @@ model Milestone {
 }
 
 model FamilyMember {
-  id        String   @id @default(uuid())
-  name      String
-  role      String
-  photoUrl  String?
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  name        String
+  relationship String?
+  role        String?
+  photoUrl    String?
+  quote       String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
 }
 
 model GrowthRecord {
-  id          String   @id @default(uuid())
-  date        String
-  ageString   String?
-  category    String?
-  value       String?
-  unit        String?
-  percentile  String?
-  createdAt   DateTime @default(now())
+  id                String   @id @default(uuid())
+  date              String   // ISO YYYY-MM-DD
+  babyAgeDays       Int?
+  babyAgeWeeks      Int?
+  babyAgeMonths     Int?
+  babyAgeYears      Int?
+  weight            Float?
+  height            Float?
+  headCircumference Float?
+  notes             String?
+  createdAt         DateTime @default(now())
 }
 
 model Story {

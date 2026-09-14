@@ -66,10 +66,20 @@ export async function GET() {
     }) || DEFAULT_EVENT;
     const photos: any[] = (await sql`SELECT * FROM "Photo" ORDER BY "createdAt" DESC`) as any[];
     const milestones: any[] = (await sql`SELECT * FROM "Milestone" ORDER BY date ASC`) as any[];
+    const growth: any[] = (await sql`SELECT * FROM "GrowthRecord" ORDER BY date ASC`) as any[];
+    const family: any[] = (await sql`SELECT * FROM "FamilyMember" ORDER BY "createdAt" DESC`) as any[];
+    const stories: any[] = (await sql`SELECT * FROM "Story" ORDER BY "createdAt" DESC`) as any[];
     const settingsRows: any[] = (await sql`SELECT key, value FROM "Setting"`) as any[];
     const brothersMapped = brothers.map((r: any) => ({ id: r.id, name: r.name, role: r.role, age: r.age, photoUrl: r.photoUrl, message: r.message, category: r.category, order: r.order }));
     const photosMapped = photos.map((r: any) => ({ id: r.id, src: r.src, alt: r.alt, caption: r.caption, category: r.category }));
     const milestonesMapped = milestones.map((r: any) => ({ id: r.id, title: r.title, date: r.date, description: r.description, icon: r.icon }));
+    const growthMapped = growth.map((r: any) => ({
+      id: r.id, date: r.date,
+      babyAge: { days: r.babyAgeDays || 0, weeks: r.babyAgeWeeks || 0, months: r.babyAgeMonths || 0, years: r.babyAgeYears || 0 },
+      weight: r.weight || 0, height: r.height || 0, headCircumference: r.headCircumference || undefined, notes: r.notes || "", createdAt: r.createdAt,
+    }));
+    const familyMapped = family.map((r: any) => ({ id: r.id, name: r.name, relationship: r.relationship || "", role: r.role || "", photoUrl: r.photoUrl || "", quote: r.quote || "", order: r.order || 0 }));
+    const storiesMapped = stories.map((r: any) => ({ id: r.id, title: r.title, content: r.content || "", date: r.date || "", photoUrl: r.photoUrl || "", createdAt: r.createdAt, updatedAt: r.updatedAt }));
     const settingMap: Record<string, string> = {};
     for (const s of settingsRows) settingMap[s.key] = s.value ?? "";
 
@@ -80,6 +90,9 @@ export async function GET() {
         events: [event],
         photos: photosMapped.length ? photosMapped : PHOTOS,
         milestones: milestonesMapped.length ? milestonesMapped : MILESTONES,
+        growth: growthMapped,
+        family: familyMapped,
+        stories: storiesMapped,
         settings: settingMap,
         source: "server-neon",
       },
@@ -133,16 +146,17 @@ export async function POST(req: Request) {
     }
     if (body.growth) {
       for (const r of body.growth) {
-        await sql`INSERT INTO "GrowthRecord" (id, date, "ageString", category, value, unit, percentile, "createdAt")
-                    VALUES (${r.id || `g-${Date.now()}`}, ${r.date}, ${r.ageString || null}, ${r.category || null}, ${r.value || null}, ${r.unit || null}, ${r.percentile || null}, NOW())
-                    ON CONFLICT (id) DO UPDATE SET "ageString"=${r.ageString || null}, category=${r.category || null}, value=${r.value || null}, unit=${r.unit || null}, percentile=${r.percentile || null}`;
+        const ba = r.babyAge || { days: 0, weeks: 0, months: 0, years: 0 };
+        await sql`INSERT INTO "GrowthRecord" (id, date, "babyAgeDays", "babyAgeWeeks", "babyAgeMonths", "babyAgeYears", weight, height, "headCircumference", notes, "createdAt")
+                    VALUES (${r.id || `g-${Date.now()}`}, ${r.date}, ${ba.days || null}, ${ba.weeks || null}, ${ba.months || null}, ${ba.years || null}, ${r.weight || null}, ${r.height || null}, ${r.headCircumference || null}, ${r.notes || ""}, NOW())
+                    ON CONFLICT (id) DO UPDATE SET "babyAgeDays"=${ba.days || null}, "babyAgeWeeks"=${ba.weeks || null}, "babyAgeMonths"=${ba.months || null}, "babyAgeYears"=${ba.years || null}, weight=${r.weight || null}, height=${r.height || null}, "headCircumference"=${r.headCircumference || null}, notes=${r.notes || ""}`;
       }
     }
     if (body.family) {
       for (const f of body.family) {
-        await sql`INSERT INTO "FamilyMember" (id, name, role, "photoUrl", "createdAt")
-                    VALUES (${f.id || `f-${Date.now()}`}, ${f.name}, ${f.role || ""}, ${f.photoUrl || ""}, NOW())
-                    ON CONFLICT (id) DO UPDATE SET name=${f.name}, role=${f.role || ""}, "photoUrl"=${f.photoUrl || ""}`;
+        await sql`INSERT INTO "FamilyMember" (id, name, relationship, role, "photoUrl", quote, "order", "createdAt")
+                    VALUES (${f.id || `f-${Date.now()}`}, ${f.name}, ${f.relationship || ""}, ${f.role || ""}, ${f.photoUrl || ""}, ${f.quote || ""}, ${f.order || 0}, NOW())
+                    ON CONFLICT (id) DO UPDATE SET name=${f.name}, relationship=${f.relationship || ""}, role=${f.role || ""}, "photoUrl"=${f.photoUrl || ""}, quote=${f.quote || ""}, "order"=${f.order || 0}`;
       }
     }
     _seeded = true;
