@@ -74,18 +74,19 @@ async function main() {
     }
   }
 
-  // --- Setting.babyPhoto ---
-  const settings = await sql`SELECT id, "key", "value" FROM "Setting" WHERE "key" = 'babyPhoto' AND "value" LIKE 'data:%'`;
+  // --- Setting.babyPhoto --- (Setting table: solo columnas key/value, NO id)
+  const settings = await sql`SELECT "key", "value" FROM "Setting" WHERE "key" = 'babyPhoto' AND "value" LIKE 'data:%'`;
   for (const s of settings.rows || settings) {
     try {
       const url = await toBlob(s.value, "baby-photo");
-      await sql`UPDATE "Setting" SET "value" = ${url} WHERE id = ${s.id}`;
+      await sql`UPDATE "Setting" SET "value" = ${url} WHERE "key" = ${s.key}`;
       fixed.settings++;
     } catch (e) {
-      await sql`UPDATE "Setting" SET "value" = '' WHERE id = ${s.id}`;
+      await sql`UPDATE "Setting" SET "value" = '' WHERE "key" = ${s.key}`;
       console.error(`  ⚠️ Setting babyPhoto falló → vacío`, e.message?.slice(0,80));
     }
   }
+  // también verificar Setting con id (tabla admin state usa key/value)
 
   console.log("\n=== Resumen migrate-base64-blob ===");
   console.log(JSON.stringify(fixed));

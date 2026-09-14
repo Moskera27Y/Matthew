@@ -36,14 +36,27 @@ export default function BabyPhotoPlaceholder({
       <div className="relative w-full h-full rounded-[1.5rem] overflow-hidden border-4 border-white shadow-strong">
         {babyPhoto ? (
           // Real photo of baby
-          <Image
-            src={babyPhoto}
-            alt="Matthew"
-            fill
-            sizes="(max-width: 768px) 288px, 320px"
-            className="object-cover"
-            priority
-          />
+          // CRITICAL: Next/Image's optimizer explodes (error #418) on large
+          // base64 dataURLs → if src is a data: URL, render a plain <img>
+          // (unoptimized). Only use <Image> for remote http(s) URLs (Blob).
+          babyPhoto.startsWith("data:") ? (
+            // eslint-disable-next-line @next/next/no-img-suffix
+            <img
+              src={babyPhoto}
+              alt="Matthew"
+              className="object-cover w-full h-full"
+              loading="eager"
+            />
+          ) : (
+            <Image
+              src={babyPhoto}
+              alt="Matthew"
+              fill
+              sizes="(max-width: 768px) 288px, 320px"
+              className="object-cover"
+              priority
+            />
+          )
         ) : (
           // Placeholder gradient shimmer
           <>
