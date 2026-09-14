@@ -1,0 +1,15 @@
+<svg width="300" height="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A8D5E2"/>
+      <stop offset="100%" stop-color="#F2B8C4"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="300" rx="24" fill="url(#g1)"/>
+  <circle cx="150" cy="110" r="42" fill="#FAFAF8" stroke="#FFD8A8" stroke-width="3"/>
+  <path d="M120 120c5-8 12-14 22-16s20 2 26 10" stroke="#3A3534" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M110 150c4 8 12 13 22 14s20-2 26-9" stroke="#3A3534" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <rect x="95" y="165" width="110" height="80" rx="12" fill="#FAFAF8" opacity="0.55"/>
+  <text x="150" y="210" font-family="Arial, sans-serif" font-size="16" fill="#3A3534" text-anchor="middle">Sofía</text>
+  <text x="150" y="230" font-family="Arial, sans-serif" font-size="12" fill="#8A7F7A" text-anchor="middle">5 años</text>
+</svg>

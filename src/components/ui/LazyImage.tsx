@@ -1,0 +1,53 @@
+// src/components/ui/LazyImage.tsx
+"use client";
+
+import Image from "next/image";
+import { useState } from "react";
+import { motion } from "framer-motion";
+
+interface LazyImageProps {
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  className?: string;
+  priority?: boolean;
+  sizes?: string;
+}
+
+export default function LazyImage({
+  src,
+  alt,
+  width,
+  height,
+  className,
+  priority = false,
+  sizes,
+}: LazyImageProps) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <div className="relative overflow-hidden">
+      {!loaded && (
+        <div className="absolute inset-0 bg-gradient-to-br from-blush-pink/20 to-soft-cream animate-pulse rounded-xl" />
+      )}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loaded ? 1 : 0 }}
+        transition={{ duration: 0.3 }}
+        className={className}
+      >
+        <Image
+          src={src}
+          alt={alt}
+          width={width}
+          height={height}
+          className={`transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+          onLoadingComplete={() => setLoaded(true)}
+          priority={priority}
+          sizes={sizes}
+        />
+      </motion.div>
+    </div>
+  );
+}

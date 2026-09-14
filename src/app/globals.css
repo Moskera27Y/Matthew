@@ -1,26 +1,152 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Paleta principal premium - intensificada */
+  --color-pearl-white: #F8F6F3;
+  --color-soft-cream: #FFF0E6;
+  --color-warm-ivory: #FFE6DC;
+  --color-blush-pink: #FFB4A2;
+  --color-dusty-rose: #E08274;
+  --color-taupe: #7A6E68;
+  --color-mist-gray: #A89B93;
+  --color-charcoal: #322B29;
+
+  /* Colores secundarios (categorías) - más saturados */
+  --color-mint-soft: #88C9A1;
+  --color-lavender-soft: #B89DFF;
+  --color-sky-soft: #84CEF0;
+  --color-peach-soft: #FFB266;
+  --color-pink-soft: #F09DAF;
+
+  /* Fuentes */
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-playfair);
+  --font-body: var(--font-lato);
+  --font-decorative: var(--font-dancing);
+
+  /* Radii premium */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+
+  /* Sombras premium - más pronunciadas */
+  --shadow-subtle: 0 2px 8px rgba(50,43,41,0.06), 0 1px 3px rgba(50,43,41,0.04);
+  --shadow-card: 0 8px 30px rgba(50,43,41,0.08), 0 2px 8px rgba(50,43,41,0.04);
+  --shadow-strong: 0 20px 50px rgba(50,43,41,0.15), 0 6px 18px rgba(50,43,41,0.08);
+  --shadow-inner: inset 0 2px 8px rgba(50,43,41,0.04);
+
+  /* Gradientes premium */
+  --gradient-hero: linear-gradient(135deg, #FFF0E6 0%, #F8F6F3 100%);
+  --gradient-card: linear-gradient(180deg, #FFE6DC 0%, #F8F6F3 100%);
+  --gradient-accent: linear-gradient(90deg, #FFB4A2 0%, #FFF0E6 100%);
+  --gradient-text-dusty: linear-gradient(135deg, #E08274 0%, #C96B5A 100%);
+  --gradient-text-warm: linear-gradient(135deg, #7A6E68 0%, #4E433F 100%);
+  --gradient-text-deep: linear-gradient(135deg, #322B29 0%, #1E1816 100%);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+    scroll-margin: 2rem;
+  }
+  body {
+    background: var(--color-pearl-white);
+    font-family: var(--font-body, var(--font-sans));
+    font-weight: 300;
+    color: var(--color-taupe);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Smooth transitions for all interactive elements */
+  a, button, input {
+    transition-property: background-color, border-color, color, box-shadow, transform;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #A89B93;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #7A6E68;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .font-heading {
+    font-family: var(--font-heading);
+    font-weight: 400;
+  }
+  .font-heading-bold {
+    font-family: var(--font-heading);
+    font-weight: 700;
+  }
+  .font-body {
+    font-family: var(--font-body);
+  }
+  .font-decorative {
+    font-family: var(--font-decorative);
+  }
+  .bg-hero-gradient {
+    background: var(--gradient-hero);
+  }
+  .bg-card-gradient {
+    background: var(--gradient-card);
+  }
+  .bg-text-dusty {
+    background: var(--gradient-text-dusty);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .text-shadow-sm {
+    text-shadow: 0 1px 2px rgba(50,43,41,0.06);
+  }
+  .text-shadow-md {
+    text-shadow: 0 2px 6px rgba(50,43,41,0.08);
+  }
+  .text-shadow-lg {
+    text-shadow: 0 4px 12px rgba(50,43,41,0.12);
+  }
+  
+  /* Section alternating backgrounds */
+  .section-alt-1 {
+    background: var(--color-pearl-white);
+  }
+  .section-alt-2 {
+    background: var(--color-soft-cream);
+  }
+  
+  /* Glass effect utility */
+  .glass {
+    background: rgba(248,246,243,0.5);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(224,130,116,0.12);
+  }
+}
+
+@layer utilities {
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(200%); }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 3s ease-in-out infinite;
+  }
 }
