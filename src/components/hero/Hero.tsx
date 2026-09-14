@@ -2,7 +2,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BABY_NAME, BABY_TAGLINE, BIRTH_DATE } from "@/lib/constants";
+import { BABY_NAME, BIRTH_DATE } from "@/lib/constants";
 import { formatDateES } from "@/lib/utils";
 import AgeCounter from "./AgeCounter";
 import FloatingElements from "./FloatingElements";
@@ -62,19 +62,19 @@ export default function Hero() {
             <motion.p
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.8 }}
-              className="text-2xl sm:text-3xl md:text-4xl font-decorative text-taupe/70 mb-3 italic"
+              transition={{ delay: 0.3 }}
+              className="text-2xl sm:text-3xl md:text-4xl font-decorative text-taupe/60 mb-2 italic"
             >
-              "{BABY_TAGLINE}"
+              Nacido el <strong className="text-charcoal not-italic">{formatDateES(BIRTH_DATE)}</strong> en Cali, Valle del Cauca
             </motion.p>
 
             <motion.p
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
-              className="text-sm sm:text-base text-mist-gray mt-2 mb-12"
+              transition={{ delay: 0.4, duration: 0.8 }}
+              className="text-sm sm:text-base text-mist-gray mt-2 mb-8"
             >
-              Nacido el <strong className="text-taupe">{formatDateES(BIRTH_DATE)}</strong>
+              5.200 gramos • 48 cm • primera sonrisa a las 2 semanas
             </motion.p>
 
             {/* Age Counter */}

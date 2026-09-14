@@ -1,10 +1,21 @@
 // src/components/events/EventInvitationClient.tsx
+// Versión rehecha: sobre 3D colorido + apertura espectacular + toda la info REAL del evento.
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { Calendar, Clock, MapPin, Heart, Share2, Download, ArrowLeft, Star } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  Heart,
+  Share2,
+  Download,
+  ArrowLeft,
+  Star,
+  Gift,
+} from "lucide-react";
 import { EventDetails } from "@/types/event";
 import { formatDateES } from "@/lib/utils";
 import Button from "@/components/ui/Button";
@@ -12,67 +23,71 @@ import Button from "@/components/ui/Button";
 interface Props {
   event: EventDetails;
   babyPhoto: string;
-  autoOpen?: boolean; // si es false, el sobre queda cerrado hasta el click del usuario
+  autoOpen?: boolean;
 }
 
-const GOLDEN_GRADIENT =
-  "linear-gradient(135deg, #FFD8A8 0%, #FFE0D9 50%, #FFD8A8 100%)";
+// Colores vibrantes para confeti + glows
+const CONFETTI_COLORS = [
+  "#FF3E96", "#00D1FF", "#7AFF64", "#FFD166",
+  "#FF72D5", "#06FFA5", "#FF6B6B", "#7B61FF",
+];
 
 export default function EventInvitationClient({ event, babyPhoto, autoOpen = true }: Props) {
   const [isOpened, setIsOpened] = useState(false);
 
-  // Partículas doradas flotantes de fondo
+  // Partículas de fondo vibrantes
   const particles = useMemo(
     () =>
-      Array.from({ length: 30 }).map((_, i) => ({
+      Array.from({ length: 40 }).map((_, i) => ({
         id: i,
         x: Math.random() * 100,
         y: Math.random() * 100,
-        size: Math.random() * 2 + 0.5,
-        delay: Math.random() * 3,
-        duration: 4 + Math.random() * 3,
+        size: 2 + Math.random() * 3,
+        delay: Math.random() * 2,
+        duration: 3 + Math.random() * 2,
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
       })),
     []
   );
 
-  // Confeti colorido al abrir (efecto infantil)
-  const confettiColors = ["#FF3E96", "#00D1FF", "#7AFF64", "#FFD166", "#FF72D5", "#06FFA5"];
+  // Confeti de apertura
   const confetti = useMemo(
     () =>
-      Array.from({ length: 60 }).map((_, i) => ({
+      Array.from({ length: 80 }).map((_, i) => ({
         id: i,
-        x: Math.random() * 120 - 10,
+        x: Math.random() * 100,
         delay: Math.random() * 1.5,
-        duration: 1.2 + Math.random() * 0.8,
-        color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
-        size: 6 + Math.random() * 6,
+        duration: 0.8 + Math.random() * 0.6,
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        size: 4 + Math.random() * 8,
       })),
     []
   );
 
-  // Abrir el sobre automáticamente tras unos milisegundos (solo si autoOpen)
   useEffect(() => {
     if (!autoOpen) return;
-    const timer = setTimeout(() => setIsOpened(true), 500);
+    const timer = setTimeout(() => setIsOpened(true), 300);
     return () => clearTimeout(timer);
   }, [autoOpen]);
 
   return (
-    <section className="relative min-h-screen bg-gradient-to-br from-fuchsia-100 via-sky-50 to-amber-50 flex items-center justify-center py-12 px-4 overflow-hidden">
-      {/* Partículas doradas flotantes */}
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-fuchsia-100 via-pink-50 to-amber-100 px-4 py-12">
+      {/* Partículas flotantes vibrantes */}
       {particles.map((p) => (
         <motion.div
           key={p.id}
-          className="absolute rounded-full bg-gradient-to-r from-amber-300 to-yellow-200 pointer-events-none"
+          className="absolute rounded-full pointer-events-none"
           style={{
             left: `${p.x}%`,
             top: `${p.y}%`,
             width: `${p.size}px`,
             height: `${p.size}px`,
+            backgroundColor: p.color,
           }}
           animate={{
-            y: [0, -20, 0],
-            opacity: [0.2, 0.7, 0.2],
+            y: [0, -30, 0],
+            opacity: [0.2, 0.8, 0.2],
+            scale: [1, 1.2, 1],
           }}
           transition={{
             duration: p.duration,
@@ -83,25 +98,24 @@ export default function EventInvitationClient({ event, babyPhoto, autoOpen = tru
         />
       ))}
 
-      {/* Confeti animado al abrir el sobre */}
+      {/* Confeti al abrir */}
       <AnimatePresence>
         {isOpened &&
           confetti.map((c) => (
             <motion.div
               key={`confetti-${c.id}`}
-              className="absolute"
+              className="absolute rounded-full pointer-events-none"
               style={{
                 left: `${c.x}%`,
-                top: "50%",
+                top: "40%",
                 width: `${c.size}px`,
                 height: `${c.size}px`,
                 backgroundColor: c.color,
-                borderRadius: "50% 0",
               }}
-              initial={{ opacity: 0, y: -30, rotate: 0, scale: 0.5 }}
+              initial={{ opacity: 0, y: -20, scale: 0.5, rotate: 0 }}
               animate={{
                 opacity: [0, 1, 0],
-                y: [0, 500],
+                y: [0, 600],
                 rotate: 720,
                 scale: [0.5, 1, 0.5],
               }}
@@ -115,9 +129,9 @@ export default function EventInvitationClient({ event, babyPhoto, autoOpen = tru
           ))}
       </AnimatePresence>
 
-      {/* Glows difusos vibrantes */}
-      <div className="absolute top-1/4 left-1/4 w-[420px] h-[420px] bg-gradient-to-r from-fuchsia-300/20 via-transparent to-sky-300/20 rounded-full blur-[80px]" />
-      <div className="absolute bottom-1/4 right-1/4 w-[320px] h-[320px] bg-gradient-to-r from-amber-300/20 via-transparent to-emerald-300/20 rounded-full blur-[70px]" />
+      {/* Glows difusos */}
+      <div className="absolute top-1/4 left-1/4 w-[420px] h-[420px] bg-gradient-to-r from-fuchsia-300/25 via-transparent to-sky-300/25 rounded-full blur-[80px]" />
+      <div className="absolute bottom-1/4 right-1/4 w-[320px] h-[320px] bg-gradient-to-r from-amber-300/25 via-transparent to-emerald-300/25 rounded-full blur-[70px]" />
 
       {/* Back arrow */}
       <Link href="/eventos" passHref>
@@ -137,50 +151,43 @@ export default function EventInvitationClient({ event, babyPhoto, autoOpen = tru
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.9, ease: [0.25, 0.4, 0.25, 1] }}
       >
-        {/* Brillo envolvente al abrir */}
+        {/* Glows envolventes */}
         <motion.div
-          className="absolute -inset-3 rounded-[3rem] bg-gradient-to-r from-amber-200 via-white via-fuchsia-200 to-sky-200 opacity-0 blur-2xl"
+          className="absolute -inset-4 rounded-[3rem] bg-gradient-to-r from-amber-300 via-white via-fuchsia-300 to-sky-300 opacity-0 blur-2xl"
           animate={{ opacity: isOpened ? 0.6 : 0 }}
           transition={{ duration: 1, delay: 0.8 }}
         />
         <motion.div
-          className="absolute -inset-0.5 rounded-[2.5rem] bg-gradient-to-r from-fuchsia-400 via-amber-300 to-sky-300 opacity-0 blur-[3px]"
+          className="absolute -inset-0.5 rounded-[2.5rem] bg-gradient-to-r from-fuchsia-400 via-amber-300 to-sky-400 opacity-0 blur-[3px]"
           animate={{ opacity: isOpened ? 0.4 : 0 }}
           transition={{ duration: 1, delay: 0.85 }}
         />
 
-        {/* SOBRE — con solapa que se abre y carta que se desliza */}
+        {/* SOBRE 3D con solapa que se abre + carta deslizante */}
         <div
-          className="relative w-full h-[26rem] [perspective:1400px] [transform-style:preserve-3d]"
+          className="relative w-full h-[28rem] [perspective:1600px] [transform-style:preserve-3d]"
           onClick={() => !isOpened && setIsOpened(true)}
         >
-          {/* Base del sobre (cuerpo) */}
+          {/* Cuerpo del sobre — 3D */}
           <motion.div
-            className="absolute inset-0 mx-auto w-4/5 h-full bg-gradient-to-br from-blush-pink via-warm-gold to-dusty-rose rounded-[2.5rem] shadow-strong border-8 border-pearl-white [transform-style:preserve-3d]"
+            className="absolute inset-0 mx-auto w-4/5 h-full bg-gradient-to-br from-blush-pink via-dusty-rose to-warm-gold rounded-[3rem] shadow-strong border-8 border-pearl-white [transform-style:preserve-3d]"
             style={{ left: "0", right: "0" }}
-            animate={{ rotateY: isOpened ? -8 : 0 }}
+            animate={{ rotateY: isOpened ? -6 : 0 }}
             transition={{ duration: 1.3, ease: [0.34, 1.56, 0.64, 1], delay: isOpened ? 0.2 : 0 }}
           >
-            {/* SOLAPA superior — se pliega hacia atrás al abrir (rotateX) */}
+            {/* SOLAPA superior — rotateX(180) 3D al abrir */}
             <motion.div
-              className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-dusty-rose via-blush-pink to-warm-gold origin-bottom border-b-4 border-pearl-white"
-              style={{
-                clipPath: "polygon(0 0, 100% 0, 50% 100%)",
-                zIndex: 10,
-              }}
+              className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-dusty-rose via-blush-pink to-warm-gold origin-bottom border-b-4 border-pearl-white rounded-t-[3rem]"
+              style={{ clipPath: "polygon(0 0, 100% 0, 50% 100%)", zIndex: 10 }}
               initial={{ rotateX: 0, zIndex: 10 }}
-              animate={{
-                rotateX: isOpened ? 180 : 0,
-                zIndex: isOpened ? 1 : 10,
-              }}
+              animate={{ rotateX: isOpened ? 180 : 0, zIndex: isOpened ? 1 : 10 }}
               transition={{
                 duration: 1,
                 delay: isOpened ? 0.3 : 0.5,
                 ease: [0.34, 1.56, 0.64, 1],
               }}
             />
-
-            {/* Overlay difuminado tras la solapa al abrir */}
+            {/* Overlay difuminado tras la solapa */}
             <motion.div
               className="absolute top-0 left-0 w-full h-1/2 bg-white/10 backdrop-blur origin-bottom"
               style={{ clipPath: "polygon(0 0, 100% 0, 50% 100%)" }}
@@ -189,211 +196,203 @@ export default function EventInvitationClient({ event, babyPhoto, autoOpen = tru
               transition={{ duration: 0.6 }}
             />
 
-            {/* CARTA / tarjeta — se desliza hacia arriba y hace zoom al abrir */}
-            <motion.div
-              className="absolute bottom-0 left-0 right-0 mx-6 mb-4 bg-gradient-to-br from-pearl-white via-amber-50/80 to-pearl-white rounded-3xl border-2 border-white border-opacity-60 overflow-hidden shadow-2xl"
-              initial={{
-                opacity: 0,
-                y: "100%",
-                scale: 0.85,
-              }}
-              animate={{
-                opacity: isOpened ? 1 : 0,
-                y: isOpened ? "0%" : "100%",
-                scale: isOpened ? 1 : 0.85,
-              }}
-              transition={{
-                duration: 1,
-                delay: isOpened ? 0.8 : 0,
-                ease: [0.25, 0.4, 0.25, 1],
-              }}
-            >
-              {/* Contenido de la carta */}
-              <div className="p-8 text-center text-charcoal">
-                {/* Foto del bebé */}
-                <motion.div
-                  className="mx-auto mb-5"
-                  initial={{ scale: 0.4, opacity: 0, rotate: -10 }}
-                  animate={{
-                    scale: isOpened ? 1 : 0.4,
-                    opacity: isOpened ? 1 : 0,
-                    rotate: isOpened ? 0 : -10,
-                  }}
-                  transition={{ delay: isOpened ? 1.0 : 0, duration: 0.7, type: "spring", stiffness: 120 }}
-                >
-                  {babyPhoto ? (
-                    <div className="relative w-40 h-40 rounded-full overflow-hidden border-4 border-white shadow-xl">
-                      <img
-                        src={babyPhoto}
-                        alt="Matthew"
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-40 h-40 rounded-full bg-gradient-to-br from-amber-100 to-blush-pink/40 border-4 border-white shadow-xl flex items-center justify-center">
-                      <span className="text-5xl">💌</span>
-                    </div>
-                  )}
-                </motion.div>
+            {/* Foto del bebé dentro del sobre (visible antes de abrir) */}
+            {!isOpened && babyPhoto && (
+              <motion.div
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-28 h-28 rounded-full overflow-hidden border-4 border-white/90 shadow-md"
+                initial={{ scale: 0 }}
+                animate={{ scale: isOpened ? 0 : 1 }}
+                transition={{ delay: 0.3, type: "spring", stiffness: 150, duration: 0.8 }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={babyPhoto} alt="Matthew" className="object-cover w-full h-full" />
+              </motion.div>
+            )}
+          </motion.div>
 
-                {/* Título */}
-                <motion.h2
-                  className="text-4xl font-heading-bold mb-2 text-fuchsia-800 drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)]"
+          {/* CARTA — se desliza hacia arriba + hace zoom al abrir */}
+          <motion.div
+            className="absolute bottom-0 left-0 right-0 mx-6 mb-4 bg-gradient-to-br from-pearl-white via-amber-50/60 to-pearl-white rounded-[2.5rem] border-2 border-white border-opacity-60 overflow-hidden shadow-2xl"
+            initial={{ opacity: 0, y: "100%", scale: 0.85 }}
+            animate={{
+              opacity: isOpened ? 1 : 0,
+              y: isOpened ? "0%" : "100%",
+              scale: isOpened ? 1 : 0.85,
+            }}
+            transition={{ duration: 1, delay: isOpened ? 0.8 : 0, ease: [0.25, 0.4, 0.25, 1] }}
+          >
+            <div className="p-8 text-center text-charcoal">
+              {/* Título del evento — info REAL */}
+              <motion.h2
+                className="text-4xl sm:text-5xl font-heading-bold mb-3 text-fuchsia-800 drop-shadow-[0_2px_4px_rgba(0,0,0,0.08)]"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: isOpened ? 1 : 0, y: isOpened ? 0 : 12 }}
+                transition={{ delay: isOpened ? 1.0 : 0 }}
+              >
+                {event.title}
+              </motion.h2>
+
+              {/* Emoji + fecha destacada */}
+              <motion.div
+                className="flex items-center justify-center gap-2 mb-1"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: isOpened ? 1 : 0, scale: isOpened ? 1 : 0 }}
+                transition={{ delay: isOpened ? 1.1 : 0, type: "spring" }}
+              >
+                <Calendar size={20} className="text-fuchsia-600" />
+                <span className="text-xl font-medium text-charcoal">
+                  {formatDateES(event.date)}
+                </span>
+              </motion.div>
+
+              {/* Hora */}
+              <motion.p
+                className="text-lg text-sky-700 mb-6 flex items-center justify-center gap-2"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: isOpened ? 1 : 0, y: isOpened ? 0 : 10 }}
+                transition={{ delay: isOpened ? 1.2 : 0 }}
+              >
+                <Clock size={18} className="text-sky-600" />
+                <span>Hora: {event.time}</span>
+              </motion.p>
+
+              {/* Descripción */}
+              {event.description && (
+                <motion.p
+                  className="text-lg text-charcoal/85 mb-7 leading-relaxed max-w-md mx-auto"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: isOpened ? 1 : 0, y: isOpened ? 0 : 10 }}
-                  transition={{ delay: isOpened ? 1.15 : 0 }}
+                  transition={{ delay: isOpened ? 1.3 : 0 }}
                 >
-                  {event.title}
-                </motion.h2>
+                  {event.description}
+                </motion.p>
+              )}
 
-                {/* Emoji decorativo */}
+              {/* Detalles: fecha, hora, lugar — info REAL */}
+              <motion.div
+                className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto mb-7 text-left"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: isOpened ? 1 : 0 }}
+                transition={{ delay: isOpened ? 1.4 : 0 }}
+              >
                 <motion.div
-                  className="flex justify-center gap-2 mb-3"
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: isOpened ? 1 : 0, scale: isOpened ? 1 : 0 }}
-                  transition={{ delay: isOpened ? 1.2 : 0, type: "spring" }}
+                  className="flex items-center gap-3 p-3 bg-amber-50/60 rounded-xl"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: isOpened ? 1 : 0, x: isOpened ? 0 : -20 }}
+                  transition={{ delay: isOpened ? 1.45 : 0 }}
                 >
-                  <Star size={18} className="text-amber-400 fill-current" />
-                  <span className="text-2xl">🎉</span>
-                  <Star size={18} className="text-sky-400 fill-current" />
+                  <Calendar size={18} className="text-fuchsia-600" />
+                  <div>
+                    <span className="text-xs text-mist-gray">Fecha</span>
+                    <p className="text-sm font-medium">{formatDateES(event.date)}</p>
+                  </div>
                 </motion.div>
-
-                {/* Descripción */}
-                {event.description && (
-                  <motion.p
-                    className="text-lg text-charcoal/90 mb-6 drop-shadow-[0_1px_2px_rgba(0,0,0,0.05)] leading-relaxed"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: isOpened ? 1 : 0, y: isOpened ? 0 : 10 }}
-                    transition={{ delay: isOpened ? 1.3 : 0 }}
-                  >
-                    {event.description}
-                  </motion.p>
-                )}
-
-                {/* Detalles con iconos */}
                 <motion.div
-                  className="space-y-3 mb-6"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: isOpened ? 1 : 0 }}
-                  transition={{ delay: isOpened ? 1.4 : 0 }}
+                  className="flex items-center gap-3 p-3 bg-sky-50/60 rounded-xl"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: isOpened ? 1 : 0, x: isOpened ? 0 : 20 }}
+                  transition={{ delay: isOpened ? 1.45 : 0 }}
                 >
-                  <motion.div
-                    className="flex items-center justify-center gap-3 text-lg"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: isOpened ? 1 : 0, x: isOpened ? 0 : -20 }}
-                    transition={{ delay: isOpened ? 1.45 : 0 }}
-                  >
-                    <Calendar size={20} className="text-fuchsia-600" />
-                    <span className="font-medium">{formatDateES(event.date)}</span>
-                  </motion.div>
-                  <motion.div
-                    className="flex items-center justify-center gap-3 text-lg"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: isOpened ? 1 : 0, x: isOpened ? 0 : -20 }}
-                    transition={{ delay: isOpened ? 1.55 : 0 }}
-                  >
-                    <Clock size={20} className="text-sky-600" />
-                    <span className="font-medium">{event.time}</span>
-                  </motion.div>
-                  <motion.div
-                    className="flex items-center justify-center gap-3 text-lg"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: isOpened ? 1 : 0, x: isOpened ? 0 : -20 }}
-                    transition={{ delay: isOpened ? 1.65 : 0 }}
-                  >
-                    <MapPin size={20} className="text-amber-600" />
-                    <span className="text-right font-medium">
-                      {event.location}
-                      <br />
-                      <span className="text-sm text-charcoal/70">{event.address}</span>
-                    </span>
-                  </motion.div>
+                  <Clock size={18} className="text-sky-600" />
+                  <div>
+                    <span className="text-xs text-mist-gray">Hora</span>
+                    <p className="text-sm font-medium">{event.time}</p>
+                  </div>
                 </motion.div>
-
-                {/* Mensaje de agradecimiento */}
-                {event.thankYouMessage && (
-                  <motion.div
-                    className="bg-gradient-to-br from-amber-100/70 via-white/80 to-sky-100/70 rounded-2xl p-5 mb-5 border-2 border-dashed border-amber-200"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{
-                      opacity: isOpened ? 1 : 0,
-                      y: isOpened ? 0 : 10,
-                    }}
-                    transition={{ delay: isOpened ? 1.75 : 0 }}
-                  >
-                    <p className="text-base italic text-charcoal/90 leading-relaxed">
-                      "{event.thankYouMessage}"
-                    </p>
-                  </motion.div>
-                )}
-
-                {/* Botones */}
                 <motion.div
-                  className="flex gap-3 justify-center"
+                  className="sm:col-span-2 flex items-start gap-3 p-3 bg-mint-50/60 rounded-xl"
                   initial={{ opacity: 0, y: 15 }}
-                  animate={{
-                    opacity: isOpened ? 1 : 0,
-                    y: isOpened ? 0 : 15,
-                  }}
-                  transition={{ delay: isOpened ? 1.9 : 0 }}
+                  animate={{ opacity: isOpened ? 1 : 0, y: isOpened ? 0 : 15 }}
+                  transition={{ delay: isOpened ? 1.55 : 0 }}
                 >
-                  <Button
-                    variant="outline"
-                    size="md"
-                    onClick={() => {
-                      const url = window.location.href;
-                      if (navigator.share) {
-                        navigator.share({ title: event.title, url });
-                      } else {
-                        navigator.clipboard.writeText(url);
-                        alert("¡Link copiado! Compártelo 🎉");
-                      }
-                    }}
-                    className="border-2 border-sky-300 text-sky-700 hover:bg-sky-50 hover:scale-105 transition-all font-medium text-base"
-                  >
-                    <Share2 size={16} className="mr-1" />
-                    Compartir
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="md"
-                    onClick={() => window.print()}
-                    className="border-2 border-amber-300 text-amber-700 hover:bg-amber-50 hover:scale-105 transition-all font-medium text-base"
-                  >
-                    <Download size={16} className="mr-1" />
-                    Imprimir
-                  </Button>
+                  <MapPin size={18} className="text-amber-600 mt-0.5" />
+                  <div>
+                    <span className="text-xs text-mist-gray">Lugar</span>
+                    <p className="text-sm font-medium">{event.location}</p>
+                    {event.address && (
+                      <p className="text-sm text-charcoal/70">{event.address}</p>
+                    )}
+                  </div>
                 </motion.div>
+              </motion.div>
 
-                {/* Firma */}
+              {/* Mensaje de agradecimiento — info REAL */}
+              {event.thankYouMessage && (
                 <motion.div
-                  className="mt-4 flex items-center justify-center gap-2 text-sky-700"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: isOpened ? 1 : 0 }}
-                  transition={{ delay: isOpened ? 2.0 : 0 }}
+                  className="bg-gradient-to-br from-amber-100/60 via-white to-sky-100/60 rounded-2xl p-5 mb-7 border-2 border-dashed border-amber-200"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: isOpened ? 1 : 0, y: isOpened ? 0 : 10 }}
+                  transition={{ delay: isOpened ? 1.7 : 0 }}
                 >
-                  <Heart size={14} fill="currentColor" className="text-fuchsia-500 animate-pulse" />
-                  <span className="text-sm font-medium">con amor de Matthew 💙</span>
-                  <Heart size={14} fill="currentColor" className="text-sky-500 animate-pulse" style={{ animationDelay: "0.3s" }} />
-                </motion.div>
-              </div>
-            </motion.div>
-
-            {/* Hint "click para abrir" — solo cuando está cerrado */}
-            <AnimatePresence>
-              {!isOpened && (
-                <motion.div
-                  className="absolute bottom-2 left-1/2 -translate-x-1/2 text-sm text-white/80 font-medium flex items-center gap-1"
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 5 }}
-                  transition={{ delay: 0.8, duration: 0.6 }}
-                >
-                  Haz click para abrir →
+                  <p className="text-base italic text-charcoal/90 leading-relaxed">
+                    "{event.thankYouMessage}"
+                  </p>
                 </motion.div>
               )}
-            </AnimatePresence>
+
+              {/* Botones: Compartir + Imprimir */}
+              <motion.div
+                className="flex flex-col sm:flex-row gap-3 justify-center"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: isOpened ? 1 : 0, y: isOpened ? 0 : 15 }}
+                transition={{ delay: isOpened ? 1.85 : 0 }}
+              >
+                <Button
+                  variant="outline"
+                  size="md"
+                  className="border-2 border-sky-300 text-sky-700 hover:bg-sky-50 font-medium"
+                  onClick={() => {
+                    const url = window.location.href;
+                    if (navigator.share) {
+                      navigator.share({ title: event.title, url });
+                    } else {
+                      navigator.clipboard.writeText(url);
+                      alert("¡Link copiado! Compártelo 🎉");
+                    }
+                  }}
+                >
+                  <Share2 size={16} className="mr-1" />
+                  Compartir
+                </Button>
+                <Button
+                  variant="outline"
+                  size="md"
+                  className="border-2 border-amber-300 text-amber-700 hover:bg-amber-50 font-medium"
+                  onClick={() => window.print()}
+                >
+                  <Download size={16} className="mr-1" />
+                  Imprimir
+                </Button>
+              </motion.div>
+
+              {/* Firma */}
+              <motion.div
+                className="mt-6 flex items-center justify-center gap-2 text-sky-700"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: isOpened ? 1 : 0 }}
+                transition={{ delay: isOpened ? 2.0 : 0 }}
+              >
+                <Heart size={14} fill="currentColor" className="text-fuchsia-500 animate-pulse" />
+                <span className="text-sm font-medium">con amor de Matthew 💙</span>
+                <Heart size={14} fill="currentColor" className="text-sky-500 animate-pulse" style={{ animationDelay: "0.3s" }} />
+              </motion.div>
+            </div>
           </motion.div>
+
+          {/* Hint "click para abrir" */}
+          <AnimatePresence>
+            {!isOpened && (
+              <motion.div
+                className="absolute bottom-2 left-1/2 -translate-x-1/2 text-sm text-white/80 font-medium flex items-center gap-1"
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 5 }}
+                transition={{ delay: 0.8, duration: 0.6 }}
+              >
+                Haz click para abrir 💌
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </motion.div>
     </section>

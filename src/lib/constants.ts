@@ -1,7 +1,7 @@
 // src/lib/constants.ts
 export const BIRTH_DATE = new Date("2026-07-31T00:00:00");
 export const BABY_NAME = "Matthew";
-export const BABY_TAGLINE = "Mi historia apenas comienza";
+export const BABY_TAGLINE = ""; // reemplazado por poema en Hero
 
 interface NavLink {
   label: string;
