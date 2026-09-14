@@ -60,9 +60,14 @@ export default function AdminGallery() {
       form.append("caption", caption || "Foto de Matthew");
       form.append("category", category as string);
       const res = await fetch("/api/upload", { method: "POST", body: form });
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error || "upload falló");
-      setPreview(data.src); // URL de Vercel Blob
+      let data: any = {};
+      if (res.status > 204) {
+        try { data = await res.json(); } catch { /* empty body */ }
+      }
+      if (!res.ok) throw new Error(data?.error || `upload falló (${res.status})`);
+      const blobUrl = data.url || data.src;
+      if (!blobUrl) throw new Error("upload OK pero no se recibió URL de Blob");
+      setPreview(blobUrl); // URL de Vercel Blob
     } catch (err: any) {
       console.error("upload falló:", err?.message || err);
       alert("No se pudo subir la foto: " + (err?.message || "error desconocido"));

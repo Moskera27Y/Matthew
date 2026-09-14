@@ -67,7 +67,9 @@ function BrotherModal({ brother, onClose, onSave, existing }: ModalProps) {
       const res = await fetch("/api/upload", { method: "POST", body: payload });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || "upload falló");
-      setForm({ ...form, photoUrl: data.src }); // URL de Blob
+      const blobUrl = data.url || data.src; // endpoint devuelve {url} (Vercel Blob)
+      if (!blobUrl) throw new Error("upload OK pero no se recibió URL de Blob");
+      setForm({ ...form, photoUrl: blobUrl }); // URL de Blob
     } catch (err: any) {
       console.error("upload hermano falló:", err?.message || err);
       alert("Error subiendo foto: " + (err?.message || "inténtalo"));

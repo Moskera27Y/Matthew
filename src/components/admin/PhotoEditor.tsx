@@ -33,9 +33,13 @@ export default function PhotoEditor() {
       form.append("caption", "Foto de Matthew");
       form.append("category", "familia");
       const res = await fetch("/api/upload", { method: "POST", body: form });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "upload failed");
-      const blobUrl = data.src; // URL pública de Vercel Blob
+      let data: any = {};
+      if (res.status > 204) { // 204 No Content (success, empty body)
+        try { data = await res.json(); } catch { /* empty body */ }
+      }
+      if (!res.ok) throw new Error(data?.error || `upload failed (${res.status})`);
+      const blobUrl = data.url || data.src; // endpoint devuelve {url} (Vercel Blob)
+      if (!blobUrl) throw new Error("upload OK pero no se recibió URL de Blob");
       setBabyPhoto(blobUrl);
       console.log("[PhotoEditor] foto subida a Blob:", data.id);
       // Guardar SOLO la URL en settings (Neon). Nada de base64.
