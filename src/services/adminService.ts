@@ -58,6 +58,8 @@ async function loadFromServer(): Promise<any> {
   return res.json();
 }
 // Persiste estado parcial a Neon vía API route.
+// ⚠️ NO traga el error: propaga el throw para que la UI avise al usuario
+// (antes se hacía console.warn → el admin creía que se guardaba y no se persistía).
 async function saveToServer(patch: Record<string, unknown>): Promise<void> {
   const res = await fetch(STATE_URL, {
     method: "POST",
@@ -65,7 +67,10 @@ async function saveToServer(patch: Record<string, unknown>): Promise<void> {
     cache: "no-store",
     body: JSON.stringify(patch),
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) {
+    const body = (await res.text()).slice(0, 200);
+    throw new Error(`POST /api/admin/state falló (${res.status}): ${body}`);
+  }
 }
 // DELETE explícito: borra UN row de Neon vía query params (no sync-delete).
 // Evita el bug donde saveX(arrayFiltrado) no persistía el borrado (POST es upsert-only).
@@ -74,7 +79,7 @@ export async function deleteItem(table: "photos" | "brothers" | "family" | "grow
     method: "DELETE",
     cache: "no-store",
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) throw new Error(`DELETE /api/admin/state falló (${res.status})`);
 }
 
 // ==================== BROTHERS ====================
@@ -88,13 +93,8 @@ export const loadBrothers = async (): Promise<Brother[]> => {
 };
 
 export const saveBrothers = async (brothers: Brother[]): Promise<void> => {
-  // Persistir a Neon vía API route; mirror a localStorage para uso offline.
-  try {
-    await saveToServer({ brothers });
-  } catch (err: any) {
-    console.warn("[adminService] saveBrothers → fallback localStorage:", err?.message?.slice(0, 80));
-  }
-  safeSet(storageKeys.brothers, brothers);
+  safeSet(storageKeys.brothers, brothers); // respaldo local inmediato
+  await saveToServer({ brothers });        // propaga error si Neon falla (antes se tragaba)
 };
 
 // ==================== EVENTS ====================
@@ -108,12 +108,8 @@ export const loadEvent = async (): Promise<EventDetails> => {
 };
 
 export const saveEvent = async (event: EventDetails): Promise<void> => {
-  try {
-    await saveToServer({ event });
-  } catch (err: any) {
-    console.warn("[adminService] saveEvent → fallback localStorage:", err?.message?.slice(0, 80));
-  }
   safeSet(storageKeys.event, event);
+  await saveToServer({ event });
 };
 
 export const loadEvents = async (): Promise<EventDetails[]> => {
@@ -157,12 +153,8 @@ export const loadPhotos = async (): Promise<Photo[]> => {
 };
 
 export const savePhotos = async (photos: Photo[]): Promise<void> => {
-  try {
-    await saveToServer({ photos });
-  } catch (err: any) {
-    console.warn("[adminService] savePhotos → fallback localStorage:", err?.message?.slice(0, 80));
-  }
-  safeSet(storageKeys.photos, photos);
+  safeSet(storageKeys.photos, photos); // respaldo local inmediato
+  await saveToServer({ photos });      // propaga error si Neon falla
 };
 
 // ==================== MILESTONES ====================
@@ -176,12 +168,8 @@ export const loadMilestones = async (): Promise<Milestone[]> => {
 };
 
 export const saveMilestones = async (milestones: Milestone[]): Promise<void> => {
-  try {
-    await saveToServer({ milestones });
-  } catch (err: any) {
-    console.warn("[adminService] saveMilestones → fallback localStorage:", err?.message?.slice(0, 80));
-  }
   safeSet(storageKeys.milestones, milestones);
+  await saveToServer({ milestones });
 };
 
 // ==================== GROWTH ====================
@@ -194,12 +182,8 @@ export const loadGrowth = async (): Promise<GrowthRecord[]> => {
   }
 };
 export const saveGrowth = async (g: GrowthRecord[]): Promise<void> => {
-  try {
-    await saveToServer({ growth: g });
-  } catch (err: any) {
-    console.warn("[adminService] saveGrowth → fallback localStorage:", err?.message?.slice(0, 80));
-  }
   safeSet(storageKeys.growth, g);
+  await saveToServer({ growth: g });
 };
 
 // ==================== STORIES (legacy — se preserva por compat) ====================
@@ -212,12 +196,8 @@ export const loadStories = async (): Promise<Story[]> => {
   }
 };
 export const saveStories = async (s: Story[]): Promise<void> => {
-  try {
-    await saveToServer({ stories: s });
-  } catch (err: any) {
-    console.warn("[adminService] saveStories → fallback localStorage:", err?.message?.slice(0, 80));
-  }
   safeSet(storageKeys.stories, s);
+  await saveToServer({ stories: s });
 };
 
 // ==================== FAMILY ====================
@@ -230,12 +210,8 @@ export const loadFamily = async (): Promise<FamilyMember[]> => {
   }
 };
 export const saveFamily = async (f: FamilyMember[]): Promise<void> => {
-  try {
-    await saveToServer({ family: f });
-  } catch (err: any) {
-    console.warn("[adminService] saveFamily → fallback localStorage:", err?.message?.slice(0, 80));
-  }
   safeSet(storageKeys.family, f);
+  await saveToServer({ family: f });
 };
 
 // ==================== SETTINGS ====================
@@ -255,12 +231,8 @@ export const loadSettings = async (): Promise<AdminSettings> => {
   }
 };
 export const saveSettings = async (s: AdminSettings): Promise<void> => {
-  try {
-    await saveToServer({ settings: s });
-  } catch (err: any) {
-    console.warn("[adminService] saveSettings → fallback localStorage:", err?.message?.slice(0, 80));
-  }
   safeSet(storageKeys.settings, s);
+  await saveToServer({ settings: s });
 };
 
 // ==================== AUTH (preserva localStorage-based demo auth) ====================

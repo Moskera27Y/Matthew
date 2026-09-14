@@ -1,29 +1,22 @@
 // src/app/api/upload/route.ts
-// POST /api/upload — recibe una foto (File o base64 dataURL), la sube a Vercel Blob
-// y persiste solo la URL + metadata en Neon (via @neondatabase/serverless, no Prisma Client).
-// Esto evita timeouts de Prisma TCP en Vercel Edge y sirve fotos en todos los dispositivos.
+// POST /api/upload — recibe una foto (File o base64 dataURL) y la sube a Vercel Blob.
+// ⚠️ NO persiste en Neon aquí. El INSERT en Neon lo hace el POST /api/admin/state (savePhotos).
+// Antes, este endpoint hacía el INSERT → si Neon tenía cold-start/devolvía error, el upload
+// devolvía 500 "no se pudo subir foto" AUNQUE el blob subió OK → doble registro (upload-* + photo-*)
+// + el full-sync del POST admin borraba el upload-* → foto "desaparecía".
+// Al subir sólo a Blob: upload es 100% confiable; el POST admin persiste UNA sola vez.
 // Body multipart: field "file" (File)
 // Body JSON:      { src: "data:image/...;base64,...", alt?, caption?, category? }
-// Response: { ok: true, id, src: "<blob-url>" }
+// Response: { ok: true, id: "upload-...", src: "<blob-url>", url: "<blob-url>" }
 import { NextRequest, NextResponse } from "next/server";
-import { neon } from "@neondatabase/serverless";
 import { put } from "@vercel/blob";
 import { randomUUID } from "crypto";
-
-const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL || "";
-
-let _sql: ReturnType<typeof neon> | null = null;
-const getSQL = (): ReturnType<typeof neon> => {
-  if (!_sql) _sql = neon(connectionString);
-  return _sql;
-};
 
 const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN || "";
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB hard limit por upload
 
-export const config = {
-  api: { bodyParser: { sizeLimit: "6mb" } },
-};
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 function fileExt(name: string): string {
   const m = name.match(/\.(png|jpe?g|gif|webp|avif|svg)$/i);
@@ -39,7 +32,6 @@ function toBuffer(src: string): { buf: Buffer; mime: string } {
 export async function POST(req: NextRequest) {
   try {
     if (!BLOB_TOKEN) return NextResponse.json({ error: "BLOB_READ_WRITE_TOKEN missing" }, { status: 500 });
-    if (!connectionString) return NextResponse.json({ error: "DATABASE_URL missing" }, { status: 500 });
 
     let buffer: Buffer;
     let ext = "webp";
@@ -75,25 +67,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Imagen demasiado grande (máx ${MAX_BYTES / 1024 / 1024}MB).` }, { status: 413 });
     }
 
-    // Subir a Vercel Blob
+    // Subir a Vercel Blob — única responsabilidad del endpoint (Neon no toca aquí).
     const filename = `${Date.now()}-${randomUUID().slice(0, 8)}.${ext}`;
     const blob = await put(filename, buffer, {
       token: BLOB_TOKEN,
       access: "public",
     });
-    // Vercel Blob SDK: en algunas versiones el campo es .url o .href → normalizar.
     const url = (blob as any).url || (blob as any).href || "";
     if (!url) throw new Error("Vercel Blob no devolvió URL (put() vacío)");
 
-    // Persistir URL + metadata en Neon (serverless-safe, no Prisma)
-    const sql = getSQL();
-    const id = `upload-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    await sql`INSERT INTO "Photo" (id, src, alt, caption, category, "createdAt", "updatedAt")
-                VALUES (${id}, ${url}, ${alt}, ${caption}, ${category}, NOW(), NOW())
-                ON CONFLICT (id) DO UPDATE SET src=${url}, alt=${alt}, caption=${caption}, category=${category}`;
-
-    // devolver AMBAS props (url + src) para compat con todos los frontends
-    return NextResponse.json({ ok: true, id, url, src: url }, { status: 200 });
+    return NextResponse.json({ ok: true, id: `upload-${Date.now()}`, src: url, url, alt, caption, category }, { status: 200 });
   } catch (e: any) {
     console.error("[api/upload] failed:", e?.message || e);
     return NextResponse.json({ error: e?.message?.slice(0, 150) || "upload failed" }, { status: 500 });
