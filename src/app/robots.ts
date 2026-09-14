@@ -1,20 +1,13 @@
-// src/app/robots.txt
-export default function robots(): Response {
-  return new Response(
-    `# *
-# For a full table of contents of this application
-# please see: https://matthew-journal.vercel.app
+// src/app/robots.ts
+import { MetadataRoute } from "next";
 
-User-agent: *
-Allow: /
-
-Sitemap: https://matthew-journal.vercel.app/sitemap.xml
-`,
-    {
-      status: 200,
-      headers: {
-        "Content-Type": "text/plain",
-      },
-    }
-  );
+export default function robots(): MetadataRoute.Robots {
+  return {
+    rules: {
+      userAgent: "*",
+      allow: "/",
+      disallow: ["/admin/", "/invite/"],
+    },
+    sitemap: "https://matthew-journal.vercel.app/sitemap.xml",
+  };
 }
