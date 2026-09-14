@@ -48,18 +48,9 @@ export default function PhotoEditor() {
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
     } catch (e) {
-      console.warn("[PhotoEditor] upload falló → localStorage:", (e as Error)?.message?.slice(0, 80));
-      // Fallback offline: leer base64 LOCALMENTE (no persistir en Neon)
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const b64 = ev.target?.result as string;
-        setBabyPhoto(b64);
-        const prevSettings = JSON.parse(localStorage.getItem("mj_admin_settings") || "{}");
-        localStorage.setItem("mj_admin_settings", JSON.stringify({ ...prevSettings, babyPhoto: b64 }));
-        setIsSaved(true);
-        setTimeout(() => setIsSaved(false), 2000);
-      };
-      reader.readAsDataURL(file);
+      console.error("[PhotoEditor] upload falló:", (e as Error)?.message?.slice(0, 80));
+      // NO base64 localStorage fallback: evita el error #418 / "This page couldn't load".
+      alert("Error subiendo la foto: " + ((e as Error)?.message || "inténtalo de nuevo"));
     }
   };
 
@@ -117,13 +108,23 @@ export default function PhotoEditor() {
         {babyPhoto ? (
           <div className="flex flex-col items-center gap-4">
             <div className="relative w-40 h-40 rounded-2xl overflow-hidden border-4 border-white shadow-card">
-              <Image
-                src={babyPhoto}
-                alt="Foto de Matthew"
-                fill
-                sizes="160px"
-                className="object-cover"
-              />
+              {babyPhoto?.startsWith("data:") ? (
+                // dataURL base64: <img> nativo (Next/Image no optimiza base64 → #418)
+                // eslint-disable-next-line @next/next/no-img-suffix
+                <img
+                  src={babyPhoto}
+                  alt="Foto de Matthew"
+                  className="object-cover w-full h-full"
+                />
+              ) : (
+                <Image
+                  src={babyPhoto}
+                  alt="Foto de Matthew"
+                  fill
+                  sizes="160px"
+                  className="object-cover"
+                />
+              )}
               {/* Zoom overlay */}
               <div className="absolute top-2 right-2 bg-white/80 backdrop-blur rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>

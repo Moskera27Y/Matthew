@@ -154,13 +154,23 @@ export default function AdminGallery() {
               className="bg-pearl-white rounded-xl p-3 shadow-subtle border border-mist-gray/10"
             >
               <div className="relative aspect-[4/3] rounded-lg overflow-hidden mb-3">
-                <Image
-                  src={photo.src}
-                  alt={photo.alt}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 50vw, 33vw"
-                />
+                {photo.src?.startsWith("http") ? (
+                  <Image
+                    src={photo.src}
+                    alt={photo.alt || "Foto"}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 50vw, 33vw"
+                    unoptimized={photo.src.includes(".blob.vercel-storage.com")}
+                  />
+                ) : (
+                  // src invalido/undefined/placeholder → no romper Next/Image (#418)
+                  <img
+                    src={photo.src || "/images/placeholder-gallery.svg"}
+                    alt={photo.alt || "Foto"}
+                    className="w-full h-full object-cover"
+                  />
+                )}
                 <div className="absolute top-2 right-2">
                   <button
                     onClick={() => handleDelete(photo.id)}
@@ -217,12 +227,17 @@ export default function AdminGallery() {
               {/* Preview de la foto */}
               {preview ? (
                 <div className="relative aspect-[4/3] rounded-xl overflow-hidden mb-4 border border-mist-gray/20">
-                  <Image
-                    src={preview}
-                    alt="Preview"
-                    fill
-                    className="object-cover"
-                  />
+                  {preview.startsWith("data:") ? (
+                    // eslint-disable-next-line @next/next/no-img-suffix
+                    <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <Image
+                      src={preview}
+                      alt="Preview"
+                      fill
+                      className="object-cover"
+                    />
+                  )}
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     className="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center text-white"
