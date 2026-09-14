@@ -1,12 +1,12 @@
 // src/components/share/ShareSection.tsx
-// Franja final "Comparte esta historia": foto del bebé + compartir + ver evento.
+// Franja final: un solo CTA premium "Ver evento" (Stripe: sombra en capas
+// con tinte de marca + elevación en hover + brillo sweep).
 "use client";
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Share2, MessageCircle, MailOpen, Heart } from "lucide-react";
+import { MailOpen, Heart, Sparkles } from "lucide-react";
 import { EventDetails } from "@/types/event";
-import Button from "@/components/ui/Button";
 
 interface Props {
   babyPhoto: string;
@@ -14,21 +14,6 @@ interface Props {
 }
 
 export default function ShareSection({ babyPhoto, event }: Props) {
-  const shareUrl = typeof window !== "undefined" ? window.location.origin : "";
-
-  const handleShare = async () => {
-    const data = { title: "Matthew Journal", text: `Acompáñanos a celebrar: ${event.title}`, url: shareUrl };
-    try {
-      if (navigator.share) await navigator.share(data);
-      else {
-        await navigator.clipboard.writeText(`${data.text} ${shareUrl}`);
-        alert("¡Link copiado! Compártelo 💙");
-      }
-    } catch { /* cancelado por el usuario */ }
-  };
-
-  const waUrl = `https://wa.me/?text=${encodeURIComponent(`Acompáñanos a celebrar: ${event.title} ${shareUrl}`)}`;
-
   return (
     <section className="relative overflow-hidden py-20 sm:py-24" style={{ background: "linear-gradient(135deg, #701A75 0%, #BE185D 35%, #D97706 70%, #0369A1 100%)" }}>
       {/* Shimmer ambiental */}
@@ -37,6 +22,20 @@ export default function ShareSection({ babyPhoto, event }: Props) {
         animate={{ x: ["-120%", "420%"] }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", repeatDelay: 1 }}
       />
+      {/* Estrellitas */}
+      {Array.from({ length: 10 }).map((_, i) => (
+        <span
+          key={i}
+          className="absolute text-white/50 animate-twinkle-soft pointer-events-none"
+          style={{
+            left: `${6 + ((i * 37) % 88)}%`,
+            top: `${10 + ((i * 53) % 75)}%`,
+            animationDelay: `${(i % 5) * 0.7}s`,
+          }}
+        >
+          <Sparkles size={14 + (i % 3) * 5} />
+        </span>
+      ))}
       <div className="absolute -top-20 left-1/4 w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-20 right-1/4 w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -45,8 +44,9 @@ export default function ShareSection({ babyPhoto, event }: Props) {
           initial={{ opacity: 0, scale: 0.7 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          transition={{ type: "spring", stiffness: 150 }}
-          className="mx-auto mb-6 w-24 h-24 rounded-full overflow-hidden border-4 border-white/80 shadow-2xl"
+          transition={{ type: "spring", stiffness: 150, damping: 14 }}
+          className="mx-auto mb-6 w-24 h-24 rounded-full overflow-hidden border-4 border-white/80"
+          style={{ boxShadow: "0 18px 40px -12px rgba(0,0,0,0.45), 0 0 0 6px rgba(255,255,255,0.15)" }}
         >
           {babyPhoto ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -58,57 +58,58 @@ export default function ShareSection({ babyPhoto, event }: Props) {
           )}
         </motion.div>
 
+        <motion.p
+          className="text-xs sm:text-sm font-bold tracking-[0.3em] uppercase text-amber-200 mb-3"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+        >
+          Celebremos juntos
+        </motion.p>
         <motion.h2
           className="text-3xl sm:text-4xl md:text-5xl font-heading-bold mb-3 drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.15 }}
+          transition={{ delay: 0.12 }}
         >
-          Comparte esta historia
+          {event.title}
         </motion.h2>
         <motion.p
-          className="text-white/85 text-base sm:text-lg max-w-xl mx-auto mb-8"
+          className="text-white/85 text-base sm:text-lg max-w-xl mx-auto mb-9"
           initial={{ opacity: 0, y: 15 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.25 }}
+          transition={{ delay: 0.22 }}
         >
-          Cada recuerdo de Matthew es más bonito cuando se comparte con quienes amamos.
+          Tenemos una invitación animada preparada con amor para ti y tu familia.
         </motion.p>
 
         <motion.div
-          className="flex flex-col sm:flex-row gap-3 justify-center items-center"
-          initial={{ opacity: 0, y: 15 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 18, scale: 0.94 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.35 }}
+          transition={{ delay: 0.3, type: "spring", stiffness: 160, damping: 15 }}
         >
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={handleShare}
-            className="bg-white text-fuchsia-700 hover:bg-fuchsia-50 font-bold w-full sm:w-auto shadow-xl"
-          >
-            <Share2 size={17} className="mr-2" /> Compartir
-          </Button>
-          <a href={waUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
-            <Button
-              variant="outline"
-              size="lg"
-              className="border-2 border-white/70 text-white hover:bg-white/15 font-bold w-full"
+          <Link href={`/eventos/${event.id}`} className="inline-block">
+            <motion.span
+              className="group relative inline-flex items-center gap-3 text-fuchsia-800 font-bold text-lg px-10 py-4 rounded-full bg-white overflow-hidden cursor-pointer"
+              style={{ boxShadow: "0 20px 45px -12px rgba(80,10,50,0.55), 0 4px 14px -2px rgba(0,0,0,0.25)" }}
+              whileHover={{ y: -3, scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 300, damping: 18 }}
             >
-              <MessageCircle size={17} className="mr-2" /> WhatsApp
-            </Button>
-          </a>
-          <Link href={`/eventos/${event.id}`} className="w-full sm:w-auto">
-            <Button
-              variant="outline"
-              size="lg"
-              className="border-2 border-amber-300 text-amber-200 hover:bg-white/15 font-bold w-full"
-            >
-              <MailOpen size={17} className="mr-2" /> Ver evento
-            </Button>
+              {/* Brillo sweep en hover */}
+              <span className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-fuchsia-200/70 to-transparent skew-x-[-18deg] -translate-x-[220%] group-hover:translate-x-[320%] transition-transform duration-700 pointer-events-none" />
+              <motion.span
+                className="relative"
+                animate={{ rotate: [0, 18, -14, 0] }}
+                transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 1.6 }}
+              >
+                <MailOpen size={22} />
+              </motion.span>
+              <span className="relative">Ver evento</span>
+            </motion.span>
           </Link>
         </motion.div>
       </div>

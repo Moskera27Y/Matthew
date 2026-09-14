@@ -12,6 +12,7 @@ import FamilySection from "@/components/family/FamilySection";
 import SectionDivider from "@/components/ui/SectionDivider";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import ShareSection from "@/components/share/ShareSection";
+import AmbientBackground from "@/components/background/AmbientBackground";
 import { useAdminData } from "@/hooks/useAdminData";
 
 export default function Home() {
@@ -22,12 +23,7 @@ export default function Home() {
     <>
       <Header />
       <main className="relative flex flex-col">
-        {/* Fondo ambiental fijo: blobs de color que unen toda la página */}
-        <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
-          <div className="absolute -top-32 -left-32 w-[480px] h-[480px] rounded-full bg-fuchsia-200/25 blur-[100px] animate-float-slow" />
-          <div className="absolute top-1/3 -right-40 w-[520px] h-[520px] rounded-full bg-amber-200/25 blur-[100px] animate-float-slow" style={{ animationDelay: "2s" }} />
-          <div className="absolute bottom-0 left-1/3 w-[420px] h-[420px] rounded-full bg-sky-200/25 blur-[100px] animate-float-slow" style={{ animationDelay: "4s" }} />
-        </div>
+        <AmbientBackground />
         <div className="relative z-10 flex flex-col">
         <Hero />
         <SectionDivider variant="wave" />

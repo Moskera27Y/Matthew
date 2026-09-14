@@ -21,12 +21,12 @@ function EnvelopePreview({ event, large = false }: { event: EventDetails; large?
   const photoSize = large ? "w-20 h-20" : "w-14 h-14";
   return (
     <div className={`relative ${size} [perspective:900px] mx-auto`}>
-      {/* Glow pulsante detrás */}
+      {/* Glow con respiración detrás */}
       <motion.div
         className="absolute -inset-3 rounded-[2rem] blur-lg"
         style={{ background: "linear-gradient(135deg, #E879F9, #FBBF24, #38BDF8)" }}
-        animate={{ opacity: [0.35, 0.6, 0.35] }}
-        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+        animate={{ opacity: [0.3, 0.65, 0.3], scale: [1, 1.04, 1] }}
+        transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
       />
       {/* Sobre flotante */}
       <motion.div
@@ -49,7 +49,7 @@ function EnvelopePreview({ event, large = false }: { event: EventDetails; large?
             className="absolute inset-0 opacity-20"
             style={{ background: "repeating-linear-gradient(45deg, transparent 0 12px, rgba(255,255,255,.35) 12px 17px)" }}
           />
-          {/* Solapa que se entreabre sola en loop */}
+          {/* Solapa que se entreabre sola en loop (spring elástico) */}
           <motion.div
             className="absolute top-0 left-0 w-full h-1/2 origin-top border-b-[3px] border-white/70"
             style={{
@@ -57,8 +57,8 @@ function EnvelopePreview({ event, large = false }: { event: EventDetails; large?
               background: "linear-gradient(to bottom, #7E22CE, #DB2777 60%, #F59E0B)",
               transformStyle: "preserve-3d",
             }}
-            animate={{ rotateX: [0, -32, 0, 0] }}
-            transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", repeatDelay: 1.4 }}
+            animate={{ rotateX: [0, -34, 0, 0] }}
+            transition={{ duration: 3.4, repeat: Infinity, ease: [0.34, 1.3, 0.64, 1], repeatDelay: 1.2 }}
           />
           {/* Foto del evento asomando */}
           {photo ? (

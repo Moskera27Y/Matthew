@@ -156,8 +156,8 @@ export default function EventInvitationClient({ event, babyPhoto, autoOpen = fal
             <motion.div
               className="absolute -inset-6 rounded-[3rem] blur-xl"
               style={{ background: "conic-gradient(from 0deg, #FF3E96, #FFD166, #00D1FF, #7AFF64, #7B61FF, #FF3E96)" }}
-              animate={{ rotate: 360, opacity: isOpened ? 0.55 : 0.35 }}
-              transition={{ rotate: { duration: 10, repeat: Infinity, ease: "linear" }, opacity: { duration: 1 } }}
+              animate={{ rotate: 360, opacity: isOpened ? [0.45, 0.65, 0.45] : 0.35, scale: isOpened ? [1, 1.03, 1] : 1 }}
+              transition={{ rotate: { duration: 10, repeat: Infinity, ease: "linear" }, opacity: { duration: 2.6, repeat: Infinity, ease: "easeInOut" }, scale: { duration: 2.6, repeat: Infinity, ease: "easeInOut" } }}
             />
             {/* Cuerpo del sobre */}
             <motion.div
