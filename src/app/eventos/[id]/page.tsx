@@ -1,21 +1,20 @@
 // src/app/eventos/[id]/page.tsx
 // Server Component shell: resuelve `id` para routing + metadata,
-// luego delega la lectura de localStorage (cliente) a EventInvitationLoader.
+// luego delega la lectura de DB (Prisma/Neon) al EventInvitationLoader (cliente).
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { findEventById } from "@/services/adminService";
+import { DEFAULT_EVENT } from "@/types/event";
 import EventInvitationLoader from "@/components/events/EventInvitationLoader";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-// Pre-render estática de metadatos: necesita el evento REAL.
-// Nota: en servidor localStorage no existe → findEventById cae al evento
-// default. La metadata del cliente se hidrata después y usa el evento real.
+// Pre-render estática de metadatos: necesita el evento REAL desde la DB.
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const event = findEventById(id);
+  const event = await findEventById(id);
   if (!event) {
     return { title: "Evento no encontrado" };
   }
@@ -27,11 +26,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function EventInvitationPage({ params }: PageProps) {
   const { id } = await params;
-  // El shell server valida que el id exista (default event o lista).
-  const exists = !!findEventById(id);
-  if (!exists) {
-    // notFound() del servidor lanza 404 estático si el id no coincide al
-    // menos al default. El loader cliente hará fetch real al montar.
+  // El shell server valida que el id exista (default event or DB).
+  // findEventById es async (Prisma + fallback offline).
+  const event = await findEventById(id);
+  if (!event && id !== "matthew-baptism" && id !== DEFAULT_EVENT.id) {
+    // 404 estático si el id no existe ni como default.
     notFound();
   }
   // autoOpen=true → el sobre se abre con animación al navegar desde /eventos

@@ -159,9 +159,12 @@ export default function AdminFamily() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const loaded = loadFamily();
-    console.log("[AdminFamily] Loaded members:", loaded.length);
-    setMembers(loaded);
+    loadFamily()
+      .then((loaded) => {
+        console.log("[AdminFamily] Loaded members:", loaded.length);
+        setMembers(loaded);
+      })
+      .catch(() => setMembers([]));
   }, []);
 
   const handleSave = useCallback(

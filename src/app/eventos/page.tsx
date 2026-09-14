@@ -32,22 +32,23 @@ function EnvelopePreview({ event }: { event: EventDetails }) {
 
 export default function EventosPage() {
   const [events, setEvents] = useState<EventDetails[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const es = loadEvents().filter(
+  const fetchEvents = async () => {
+    const list = await loadEvents();
+    const es = list.filter(
       (e) => e && (e.isEnabled !== false) && !!e.title && !!e.id
     );
     setEvents(es);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchEvents();
 
     // Sincronizar en tiempo real con cambios del admin
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === "mj_admin_events" || e.key === "mj_admin_event") {
-        setEvents(
-          loadEvents().filter(
-            (ev) => ev && ev.isEnabled !== false && !!ev.title && !!ev.id
-          )
-        );
-      }
+    const onStorage = () => {
+      fetchEvents();
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
@@ -109,7 +110,16 @@ export default function EventosPage() {
           </motion.div>
 
           {/* Contenido: evento único (grande/centrado) o grid de múltiples */}
-          {activeEvents.length === 0 ? (
+          {loading && activeEvents.length === 0 ? (
+            <motion.div
+              className="text-center py-20"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              <Calendar size={48} className="mx-auto text-fuchsia-300 animate-bounce mb-4" />
+              <p className="text-charcoal/70">Cargando eventos...</p>
+            </motion.div>
+          ) : activeEvents.length === 0 ? (
             <motion.div
               className="text-center py-20"
               initial={{ opacity: 0, y: 20 }}

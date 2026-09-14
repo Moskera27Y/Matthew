@@ -126,7 +126,7 @@ export default function AdminGrowth() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    setRecords(loadGrowth());
+    loadGrowth().then(setRecords).catch(() => setRecords([]));
   }, []);
 
   const handleSave = (updated: GrowthRecord) => {

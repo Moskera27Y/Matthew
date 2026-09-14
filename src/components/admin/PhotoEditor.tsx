@@ -15,37 +15,62 @@ export default function PhotoEditor() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const settings = loadSettings();
-    if (settings?.babyPhoto) setBabyPhoto(settings.babyPhoto);
+    let cancelled = false;
+    loadSettings().then((settings) => {
+      if (!cancelled && settings?.babyPhoto) setBabyPhoto(settings.babyPhoto);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const loadImage = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const base64 = ev.target?.result as string;
-      setBabyPhoto(base64);
-      saveSettings({ ...loadSettings(), babyPhoto: base64 });
-      setIsSaved(true);
-      setTimeout(() => setIsSaved(false), 2000);
-    };
-    reader.readAsDataURL(file);
+  const loadImage = async (base64: string) => {
+    setBabyPhoto(base64);
+    try {
+      // Subir a server (DB Neon) para que se vea en CUALQUIER dispositivo
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ src: base64, alt: "Foto de Matthew", category: "familia" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "upload failed");
+      console.log("[PhotoEditor] foto subida a server:", data.id);
+    } catch (e) {
+      console.warn("[PhotoEditor] upload a server falló → localStorage", (e as Error)?.message?.slice(0, 80));
+    }
+    // Mirror a settings (localStorage fallback)
+    const prev = await loadSettings();
+    await saveSettings({ ...prev, babyPhoto: base64 });
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2000);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) loadImage(file);
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const base64 = ev.target?.result as string;
+      loadImage(base64);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("image/")) loadImage(file);
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => loadImage(ev.target?.result as string);
+    reader.readAsDataURL(file);
   };
 
-  const handleRemovePhoto = () => {
+  const handleRemovePhoto = async () => {
     setBabyPhoto("");
-    saveSettings({ ...loadSettings(), babyPhoto: "" });
+    const prev = await loadSettings();
+    await saveSettings({ ...prev, babyPhoto: "" });
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
   };

@@ -24,6 +24,7 @@ export interface Milestone {
   parentNote?: string;
   images?: string[]; // Cloudinary URLs / local paths
   order: number;
+  icon?: string;    // emoji/icono del milestone (opcional)
 }
 
 export interface TimelineProps {

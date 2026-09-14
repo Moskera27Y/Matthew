@@ -21,6 +21,7 @@ import {
   BrotherRole,
   BrotherCategory,
   categoryLabels,
+  DEFAULT_BROTHERS,
 } from "@/types/brother";
 import { loadBrothers, saveBrothers } from "@/services/adminService";
 
@@ -217,24 +218,24 @@ export default function AdminBrothers() {
   const [editing, setEditing] = useState<Partial<Brother> | null>(null);
 
   useEffect(() => {
-    setBrothers(loadBrothers());
+    loadBrothers().then(setBrothers).catch(() => setBrothers(DEFAULT_BROTHERS));
   }, []);
 
-  const handleSave = (b: Brother) => {
+  const handleSave = async (b: Brother) => {
     let list = [...brothers];
     const idx = list.findIndex((x) => x.id === b.id);
     if (idx >= 0) list[idx] = b;
     else list = [...list, b];
     list.sort((a, b) => a.order - b.order);
-    saveBrothers(list);
+    await saveBrothers(list);
     setBrothers(list);
     setEditing(null);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm("¿Eliminar este hermano?")) return;
     const list = brothers.filter((b) => b.id !== id);
-    saveBrothers(list);
+    await saveBrothers(list);
     setBrothers(list);
   };
 

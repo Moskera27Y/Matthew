@@ -1,11 +1,12 @@
 // src/components/events/EventInvitationLoader.tsx
-// Client Component: resuelve el evento REAL desde localStorage (cliente)
-// y lo pasa al EventInvitationClient. Reacciona a cambios del admin (storage event).
+// Client Component: resuelve el evento REAL desde Prisma/Neon (async) con
+// fallback offline (localStorage). Refresca al admin guardar (storage event).
 "use client";
 
 import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import { findEventById, loadSettings } from "@/services/adminService";
+import { DEFAULT_EVENT } from "@/types/event";
 import EventInvitationClient from "@/components/events/EventInvitationClient";
 import { EventDetails } from "@/types/event";
 
@@ -15,37 +16,63 @@ interface Props {
 }
 
 export default function EventInvitationLoader({ eventId, autoOpen = true }: Props) {
-  const [event, setEvent] = useState<EventDetails | null>(() => findEventById(eventId));
-  const [babyPhoto, setBabyPhoto] = useState<string>(() => loadSettings().babyPhoto || "");
+  const [event, setEvent] = useState<EventDetails | null>(() => DEFAULT_EVENT);
+  const [babyPhoto, setBabyPhoto] = useState<string>("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Cargar en cliente (localStorage disponible) — esto garantiza el evento REAL
-    const evt = findEventById(eventId);
-    if (evt) {
-      setEvent(evt);
-    } else {
-      // Si el id no existe en cliente (ej: default al cargar), refrescar al storage event
-      setEvent(findEventById(eventId) ?? null);
-    }
-    setBabyPhoto(loadSettings().babyPhoto || "");
+    let cancelled = false;
 
-    // Escuchar cambios: cuando el admin guarda el evento, refrescamos
+    const load = async () => {
+      try {
+        // findEventById ahora es async (Prisma + fallback localStorage)
+        const evt = await findEventById(eventId);
+        const resolved =
+          evt ?? (eventId === "matthew-baptism" ? DEFAULT_EVENT : null);
+        if (!cancelled) {
+          if (!resolved) {
+            notFound();
+          } else {
+            setEvent(resolved);
+          }
+        }
+        // babyPhoto del evento o de settings
+        const settings = await loadSettings();
+        if (!cancelled) setBabyPhoto(settings.babyPhoto || resolved?.photoUrl || "");
+      } catch {
+        // fallback total al default
+        if (!cancelled) setEvent(DEFAULT_EVENT);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+
+    // Refrescar cuando el admin guarda (storage event en otra pestaña)
     const onStorage = (e: StorageEvent) => {
       if (
         e.key &&
-        (e.key === "mj_admin_event" || e.key === "mj_admin_events" || e.key === "mj_admin_settings")
+        (e.key === "mj_admin_event" ||
+          e.key === "mj_admin_events" ||
+          e.key === "mj_admin_settings")
       ) {
-        const fresh = findEventById(eventId);
-        // Sólo actualizamos si el evento real existe para este id
-        if (fresh) setEvent(fresh);
-        setBabyPhoto(loadSettings().babyPhoto || "");
+        load();
       }
     };
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("storage", onStorage);
+    };
   }, [eventId]);
 
-  // Si no hay evento (ni default ni lista), 404 cliente
+  // Mientras carga el evento REAL, no renderizamos (el evento default está en state)
+  if (loading) {
+    // Renderizamos con DEFAULT_EVENT sin animación de apertura aún
+    return <EventInvitationClient event={DEFAULT_EVENT} babyPhoto={babyPhoto} autoOpen={false} />;
+  }
+
   if (!event) {
     notFound();
   }

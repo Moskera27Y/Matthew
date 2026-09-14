@@ -1,4 +1,5 @@
 // src/app/invite/[token]/page.tsx
+// Server Component: valida token + carga evento+settings desde DB (async).
 import EventInvitationClient from "@/components/events/EventInvitationClient";
 import { loadEvent, loadSettings } from "@/services/adminService";
 import { validateInvitationToken } from "@/services/invitationService";
@@ -10,7 +11,7 @@ interface InvitePageProps {
 
 export async function generateMetadata({ params }: InvitePageProps): Promise<Metadata> {
   const { token } = await params;
-  const event = loadEvent();
+  const event = await loadEvent();
   if (!event || !event.title) {
     return { title: "Invitación no válida" };
   }
@@ -31,7 +32,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
     );
   }
 
-  const event = loadEvent();
+  const [event, settings] = await Promise.all([loadEvent(), loadSettings()]);
 
   if (!event || !event.title) {
     return (
@@ -41,9 +42,6 @@ export default async function InvitePage({ params }: InvitePageProps) {
     );
   }
 
-  const settings = loadSettings();
-
-  // Renderiza el sobre animado premium — conecta con el admin
-  // autoOpen={false} → sobre inicia cerrado; el usuario da click para abrir la animación
+  // Renderiza el sobre animado premium — autoOpen={false}: sobre cerrado, click para abrir
   return <EventInvitationClient event={event} babyPhoto={settings?.babyPhoto || ""} autoOpen={false} />;
 }

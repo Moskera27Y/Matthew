@@ -25,7 +25,7 @@ export default function AdminGallery() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    setPhotos(loadPhotos());
+    loadPhotos().then(setPhotos).catch(() => setPhotos([]));
   }, []);
 
   const filtered = photos.filter((p) => {

@@ -1,0 +1,99 @@
+// prisma/schema.prisma
+// Schema para Matthew Journal — persistencia REAL cross-device (Neon PostgreSQL).
+// Migrado desde localStorage. Usa Prisma client como source of truth.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // directUrl = env("DIRECT_URL")  // opcional: migraciones directas
+}
+
+model Brother {
+  id        String   @id @default(uuid())
+  name      String   @default("Sofía")
+  role      String   @default("prima")
+  age       String?
+  photoUrl  String?
+  message   String?
+  category  String   @default("primos")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+}
+
+model Event {
+  id               String   @id @default(uuid())
+  title            String
+  date             String   // ISO YYYY-MM-DD
+  time             String?
+  location         String?
+  address          String?
+  description      String?
+  thankYouMessage  String?
+  type             String   @default("bautizo")
+  photoUrl         String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([id])
+}
+
+model Photo {
+  id        String   @id @default(uuid())
+  src       String   // puede ser base64 (data:image/...) o URL cloud
+  alt       String?
+  caption   String?
+  category  String   @default("familia")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+}
+
+model Milestone {
+  id        String   @id @default(uuid())
+  title     String
+  date      String
+  description String?
+  icon      String?
+  createdAt DateTime @default(now())
+}
+
+model FamilyMember {
+  id        String   @id @default(uuid())
+  name      String
+  role      String
+  photoUrl  String?
+  createdAt DateTime @default(now())
+}
+
+model GrowthRecord {
+  id          String   @id @default(uuid())
+  date        String
+  ageString   String?
+  category    String?
+  value       String?
+  unit        String?
+  percentile  String?
+  createdAt   DateTime @default(now())
+}
+
+model Story {
+  id        String   @id @default(uuid())
+  title     String
+  content   String?
+  date      String?
+  photoUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Setting {
+  key   String  @id
+  value String?
+}

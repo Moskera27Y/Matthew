@@ -8,6 +8,8 @@ export interface EventDetails {
   address: string;
   description: string;
   thankYouMessage: string;
+  type?: string;        // "bautizo" | "cumpleaños" | ... (opcional)
+  photoUrl?: string;    // foto del evento
   isPublic: boolean;
   isEnabled?: boolean; // soft toggle para mostrar/ocultar evento en homepage
 }

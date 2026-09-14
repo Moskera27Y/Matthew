@@ -24,11 +24,16 @@ export default function InvitationPage({ token, event }: InvitationPageProps) {
   const [isOpened, setIsOpened] = useState(false);
 
   useEffect(() => {
-    const settings = loadSettings();
-    if (settings?.babyPhoto) setBabyPhoto(settings.babyPhoto);
+    let cancelled = false;
+    loadSettings().then((settings) => {
+      if (!cancelled && settings?.babyPhoto) setBabyPhoto(settings.babyPhoto);
+    });
     // Abrir el sobre automáticamente después de 0.6s con efecto cascada
     const timer = setTimeout(() => setIsOpened(true), 600);
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   // Partículas flotantes doradas detrás del sobre

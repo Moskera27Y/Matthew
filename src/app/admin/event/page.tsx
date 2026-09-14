@@ -45,7 +45,7 @@ export default function AdminEvent() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    setEvent(loadEvent());
+    loadEvent().then(setEvent).catch(() => setEvent({ id: "default", title: "", date: "", time: "", location: "", address: "", description: "", thankYouMessage: "", isPublic: true, isEnabled: true }));
     const token = loadInvitationToken();
     if (token) setInvitationToken(token);
   }, []);
@@ -56,16 +56,16 @@ export default function AdminEvent() {
     saveInvitationToken(token);
   };
 
-  const handleSaveEvent = () => {
-    saveEvent(event);
+  const handleSaveEvent = async () => {
+    await saveEvent(event);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
   };
 
-  const handleToggleEnabled = () => {
+  const handleToggleEnabled = async () => {
     const updated = { ...event, isEnabled: !event.isEnabled };
     setEvent(updated);
-    saveEvent(updated);
+    await saveEvent(updated);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
   };

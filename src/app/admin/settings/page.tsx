@@ -42,9 +42,13 @@ export default function AdminSettings() {
   useEffect(() => {
     const stored = getPrivacySettings();
     if (stored) setSettings(stored);
-    const adminSettings = loadSettings();
-    if (adminSettings?.babyPhoto) setBabyPhoto(adminSettings.babyPhoto);
-    setEvent(loadEvent());
+    // Cargar configuración de admin (async DB/Neon)
+    Promise.all([loadSettings(), loadEvent()])
+      .then(([adminSettings, evt]) => {
+        if (adminSettings?.babyPhoto) setBabyPhoto(adminSettings.babyPhoto);
+        setEvent(evt);
+      })
+      .catch((e) => console.warn("[AdminSettings] load falló:", e));
     // Cargar token existente
     const token = loadInvitationToken();
     if (token) setInvitationToken(token);
@@ -76,7 +80,7 @@ export default function AdminSettings() {
     setTimeout(() => setIsSaved(false), 3000);
   };
 
-  const handleEventSave = () => {
+  const handleEventSave = async () => {
     saveEvent(event);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
@@ -86,19 +90,21 @@ export default function AdminSettings() {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       const base64 = ev.target?.result as string;
       setBabyPhoto(base64);
-      saveSettings({ ...loadSettings(), babyPhoto: base64 });
+      const prev = await loadSettings();
+      saveSettings({ ...prev, babyPhoto: base64 });
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
     };
     reader.readAsDataURL(file);
   };
 
-  const handleRemovePhoto = () => {
+  const handleRemovePhoto = async () => {
     setBabyPhoto("");
-    saveSettings({ ...loadSettings(), babyPhoto: "" });
+    const prev = await loadSettings();
+    saveSettings({ ...prev, babyPhoto: "" });
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
   };
