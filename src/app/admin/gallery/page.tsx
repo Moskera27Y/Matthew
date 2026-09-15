@@ -11,6 +11,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Image from "next/image";
+import { prepareUploadImage } from "@/lib/image";
 import { formatDateES } from "@/lib/utils";
 import { BIRTH_DATE } from "@/lib/constants";
 
@@ -75,8 +76,10 @@ export default function AdminGallery() {
     if (!file || !file.type.startsWith("image/")) return;
     setIsSaving(true);
     try {
+      // Comprimir en cliente: fotos de móvil de 3-12MB daban 413 en el server
+      const up = await prepareUploadImage(file);
       const form = new FormData();
-      form.append("file", file);
+      form.append("file", up.blob, up.name);
       form.append("alt", caption || "Foto de Matthew");
       form.append("caption", caption || "Foto de Matthew");
       form.append("category", category as string);

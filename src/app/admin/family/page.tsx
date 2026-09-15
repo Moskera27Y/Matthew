@@ -9,6 +9,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Avatar from "@/components/ui/Avatar";
+import { prepareUploadImage } from "@/lib/image";
 
 function FamilyMemberForm({
   member,
@@ -65,7 +66,9 @@ function FamilyMemberForm({
                   if (!file) return;
                   try {
                     const form = new FormData();
-                    form.append("file", file);
+                    // Comprimir en cliente: fotos de móvil de 3-12MB daban 413
+                    const up = await prepareUploadImage(file);
+                    form.append("file", up.blob, up.name);
                     form.append("alt", name || "Foto");
                     form.append("caption", relationship || "");
                     form.append("category", "family");

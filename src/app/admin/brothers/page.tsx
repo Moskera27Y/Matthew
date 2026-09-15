@@ -24,6 +24,7 @@ import {
   DEFAULT_BROTHERS,
 } from "@/types/brother";
 import { loadBrothers, saveBrothers, deleteItem } from "@/services/adminService";
+import { prepareUploadImage } from "@/lib/image";
 
 // Mapa de etiquetas legibles para el role
 const roleLabels: Record<BrotherRole, string> = {
@@ -60,7 +61,9 @@ function BrotherModal({ brother, onClose, onSave, existing }: ModalProps) {
     if (!file) return;
     try {
       const payload = new FormData();
-      payload.append("file", file);
+      // Comprimir en cliente: fotos de móvil de 3-12MB daban 413 en el server
+      const up = await prepareUploadImage(file);
+      payload.append("file", up.blob, up.name);
       payload.append("alt", form.name || "Foto hermano");
       payload.append("caption", form.name || "");
       payload.append("category", "family");

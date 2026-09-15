@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Upload, Trash2, ZoomIn } from "lucide-react";
 import { loadSettings, saveSettings, AdminSettings } from "@/services/adminService";
 import Button from "@/components/ui/Button";
+import { prepareUploadImage } from "@/lib/image";
 
 export default function PhotoEditor() {
   const [babyPhoto, setBabyPhoto] = useState("");
@@ -27,8 +28,10 @@ export default function PhotoEditor() {
   const loadImage = async (file: File) => {
     try {
       // Subir a server: FormData → /api/upload → Vercel Blob → URL pública
+      // (comprimida en cliente: fotos de móvil de 3-12MB daban 413)
       const form = new FormData();
-      form.append("file", file);
+      const up = await prepareUploadImage(file);
+      form.append("file", up.blob, up.name);
       form.append("alt", "Foto de Matthew");
       form.append("caption", "Foto de Matthew");
       form.append("category", "family");
