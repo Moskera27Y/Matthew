@@ -215,7 +215,9 @@ export default function AdminFamily() {
     }
   };
 
-  const handleAddNew = async () => {
+  const handleAddNew = () => {
+    // Solo local: se persiste al Guardar. Antes se guardaba de inmediato un
+    // miembro vacío (basura "Sin nombre" en Neon).
     const newMember: FamilyMember = {
       id: `temp-${Date.now()}`,
       name: "",
@@ -223,15 +225,17 @@ export default function AdminFamily() {
       role: "other",
       order: members.length + 1,
     };
-    const updated = [newMember, ...members];
-    setMembers(updated);
-    try {
-      await saveFamily(updated);
-    } catch (err: any) {
-      console.error("[AdminFamily] addNew saveFamily falló:", err?.message || err);
-    }
+    setMembers([newMember, ...members]);
     setEditingId(newMember.id);
     console.log("[AdminFamily] Added new member:", newMember.id);
+  };
+
+  const handleCancelEdit = () => {
+    // Si era un miembro nuevo sin guardar, se descarta (no queda en Neon)
+    if (editingId?.startsWith("temp-")) {
+      setMembers(members.filter((m) => m.id !== editingId));
+    }
+    setEditingId(null);
   };
 
   const getEditingMember = () =>
@@ -321,7 +325,7 @@ export default function AdminFamily() {
                   <FamilyMemberForm
                     member={member}
                     onSave={handleSave}
-                    onCancel={() => setEditingId(null)}
+                    onCancel={handleCancelEdit}
                   />
                 )}
               </div>

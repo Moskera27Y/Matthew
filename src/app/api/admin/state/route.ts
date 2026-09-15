@@ -66,9 +66,9 @@ async function ensureSeeded(sql: ReturnType<typeof neon>) {
   if (Number(fc) === 0) {
     for (const f of FAMILY_MEMBERS) {
       const { id, name, relationship, role, photoUrl, quote, order } = f;
-      await sql`INSERT INTO "FamilyMember" (id, name, relationship, role, "photoUrl", quote, "order", "createdAt")
-                  VALUES (${id}, ${name}, ${relationship || ""}, ${role || ""}, ${photoUrl || ""}, ${quote || ""}, ${order || 0}, NOW())
-                  ON CONFLICT (id) DO UPDATE SET name=${name}, relationship=${relationship || ""}, role=${role || ""}, "photoUrl"=${photoUrl || ""}, quote=${quote || ""}, "order"=${order || 0}`;
+      await sql`INSERT INTO "FamilyMember" (id, name, relationship, role, "photoUrl", quote, "order", "createdAt", "updatedAt")
+                  VALUES (${id}, ${name}, ${relationship || ""}, ${role || ""}, ${photoUrl || ""}, ${quote || ""}, ${order || 0}, NOW(), NOW())
+                  ON CONFLICT (id) DO UPDATE SET name=${name}, relationship=${relationship || ""}, role=${role || ""}, "photoUrl"=${photoUrl || ""}, quote=${quote || ""}, "order"=${order || 0}, "updatedAt"=NOW()`;
     }
   }
   // SETTINGS
@@ -210,12 +210,14 @@ export async function POST(req: Request) {
       }
     }
 
-    // FAMILY: upsert (NO sync-delete)
+    // FAMILY: upsert — INCLUYE updatedAt (columna NOT NULL sin default en Neon;
+    // omitirlo daba 500 "null value in column updatedAt" y el miembro nunca
+    // llegaba al homepage aunque el admin lo mostrara como guardado)
     if (body.family !== undefined) {
       for (const f of body.family as any[]) {
-        await sql`INSERT INTO "FamilyMember" (id, name, relationship, role, "photoUrl", quote, "order", "createdAt")
-                    VALUES (${f.id || `f-${Date.now()}`}, ${f.name}, ${f.relationship || ""}, ${f.role || ""}, ${f.photoUrl || ""}, ${f.quote || ""}, ${f.order || 0}, NOW())
-                    ON CONFLICT (id) DO UPDATE SET name=${f.name}, relationship=${f.relationship || ""}, role=${f.role || ""}, "photoUrl"=${f.photoUrl || ""}, quote=${f.quote || ""}, "order"=${f.order || 0}`;
+        await sql`INSERT INTO "FamilyMember" (id, name, relationship, role, "photoUrl", quote, "order", "createdAt", "updatedAt")
+                    VALUES (${f.id || `f-${Date.now()}`}, ${f.name}, ${f.relationship || ""}, ${f.role || ""}, ${f.photoUrl || ""}, ${f.quote || ""}, ${f.order || 0}, NOW(), NOW())
+                    ON CONFLICT (id) DO UPDATE SET name=${f.name}, relationship=${f.relationship || ""}, role=${f.role || ""}, "photoUrl"=${f.photoUrl || ""}, quote=${f.quote || ""}, "order"=${f.order || 0}, "updatedAt"=NOW()`;
       }
     }
 
