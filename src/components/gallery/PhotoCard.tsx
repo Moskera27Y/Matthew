@@ -3,7 +3,7 @@
 
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Photo } from "@/types/photo";
-import { calculateAge } from "@/lib/utils";
+import { calculateAge, parseCalendarDate } from "@/lib/utils";
 import { photoCategoryLabels } from "@/data/photos";
 import { formatDateES } from "@/lib/utils";
 import { useState, memo } from "react";
@@ -17,7 +17,7 @@ interface PhotoCardProps {
 export default memo(function PhotoCard({ photo, onClick, index }: PhotoCardProps) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const safeDate = photo.date || "2026-07-31";
-  const age = calculateAge(new Date(safeDate));
+  const age = calculateAge(parseCalendarDate(safeDate));
   const w = Number.isFinite(age.weeks) ? age.weeks : 0;
   const d = Number.isFinite(age.days) ? age.days % 7 : 0;
   const ageStr = `${w}w ${d}d`;

@@ -10,7 +10,7 @@ import { Milestone } from "@/types/milestone";
 import AdminLayout from "@/components/admin/AdminLayout";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
-import { formatDateES } from "@/lib/utils";
+import { formatDateES, babyAgeForDate } from "@/lib/utils";
 import { BIRTH_DATE } from "@/lib/constants";
 
 export default function AdminMilestones() {
@@ -41,8 +41,9 @@ export default function AdminMilestones() {
     const updatedList = milestones.filter((m) => m.id !== id);
     setMilestones(updatedList);
     try {
-      // DELETE explícito: el POST es upsert-only y nunca borra (hitos borrados reaparecían)
-      if (!id.startsWith("temp-")) await deleteItem("milestones", id);
+      // DELETE siempre: es idempotente. El bug viejo de autoguardado pudo dejar
+      // filas temp-* reales en Neon que reaparecerían al borrar.
+      await deleteItem("milestones", id);
       await saveMilestones(updatedList);
     } catch (err: any) {
       alert("No se eliminó el hito: " + (err?.message || "error"));
@@ -72,20 +73,8 @@ export default function AdminMilestones() {
     };
 
     const handleSave = () => {
-      const daysDiff = Math.floor(
-        (new Date(data.date).getTime() - BIRTH_DATE.getTime()) /
-          (1000 * 60 * 60 * 24)
-      );
-      const updated = {
-        ...data,
-        babyAge: {
-          days: daysDiff,
-          weeks: Math.floor(daysDiff / 7),
-          months: Math.floor(daysDiff / 30),
-          years: Math.floor(daysDiff / 365),
-        },
-      };
-      handleSaveFn(updated);
+      // babyAge desde la fecha calendario del suceso (local, sin corrimiento UTC)
+      handleSaveFn({ ...data, babyAge: babyAgeForDate(data.date) });
     };
 
     return (

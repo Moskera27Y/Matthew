@@ -12,6 +12,37 @@ export function calculateAge(now: Date = new Date()) {
   return { days, weeks, months, years };
 }
 
+// Fecha calendario "YYYY-MM-DD" (o ISO) → Date LOCAL al mediodía.
+// Evita el corrimiento de un día: new Date("2026-09-15") es medianoche UTC,
+// que en Colombia (UTC-5) cae el 14 a las 7pm. Al mediodía local no hay
+// zona horaria del mundo que lo mueva de día.
+export function parseCalendarDate(iso: string | undefined | null): Date {
+  const m = (iso || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0);
+  const d = iso ? new Date(iso) : new Date();
+  return Number.isNaN(d.getTime()) ? new Date() : d;
+}
+
+// Días de Matthew a la fecha del suceso (no a hoy): base de babyAge en
+// crecimiento, hitos y galería. Siempre usa fecha calendario local.
+export function daysSinceBirth(isoDate: string | undefined | null): number {
+  const d = parseCalendarDate(isoDate);
+  return Math.max(
+    0,
+    Math.floor((d.getTime() - BIRTH_DATE.getTime()) / (1000 * 60 * 60 * 24))
+  );
+}
+
+export function babyAgeForDate(isoDate: string | undefined | null) {
+  const days = daysSinceBirth(isoDate);
+  return {
+    days,
+    weeks: Math.floor(days / 7),
+    months: Math.floor(days / 30),
+    years: Math.floor(days / 365),
+  };
+}
+
 export function formatDateES(date: Date | string | undefined | null) {
   try {
     if (!date) return "Sin fecha";
@@ -24,8 +55,7 @@ export function formatDateES(date: Date | string | undefined | null) {
         /^\d{4}-\d{2}-\d{2}$/.test(date) ||
         /T00:00(:00)?(\.0+)?(Z|[+-]00:?00?)?$/.test(date);
       if (m && isMidnight) {
-        const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-        return format(d, "d 'de' MMMM 'de' yyyy", { locale: es });
+        return format(parseCalendarDate(date), "d 'de' MMMM 'de' yyyy", { locale: es });
       }
     }
     const d = date instanceof Date ? date : new Date(date);

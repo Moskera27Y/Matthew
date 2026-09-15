@@ -9,7 +9,7 @@ import { loadGrowth, saveGrowth, deleteItem } from "@/services/adminService";
 import { ageString } from "@/data/milestones";
 import AdminLayout from "@/components/admin/AdminLayout";
 import Button from "@/components/ui/Button";
-import { formatDateES } from "@/lib/utils";
+import { formatDateES, babyAgeForDate } from "@/lib/utils";
 
 // Inline edit form component
 function GrowthForm({
@@ -28,10 +28,7 @@ function GrowthForm({
   const [notes, setNotes] = useState(record.notes || "");
 
   const handleSubmit = () => {
-    const days = Math.floor(
-      (new Date(date).getTime() - new Date("2026-07-31").getTime()) /
-        (1000 * 60 * 60 * 24)
-    );
+    // babyAge desde la fecha calendario del suceso (local, sin corrimiento UTC)
     onSave({
       ...record,
       date,
@@ -39,12 +36,7 @@ function GrowthForm({
       height,
       headCircumference: head ? parseFloat(head) : undefined,
       notes,
-      babyAge: {
-        days,
-        weeks: Math.floor(days / 7),
-        months: Math.floor(days / 30),
-        years: Math.floor(days / 365),
-      },
+      babyAge: babyAgeForDate(date),
     });
   };
 
@@ -148,8 +140,10 @@ export default function AdminGrowth() {
       const updated = records.filter((r) => r.id !== id);
       setRecords(updated);
       try {
-        // DELETE explícito: el POST es upsert-only y el registro reaparecería
-        if (!id.startsWith("temp-")) await deleteItem("growth", id);
+        // DELETE siempre: es idempotente (0 rows si no existe). Antes se saltaba
+        // con ids temp-*, pero el bug viejo de autoguardado dejó filas temp-*
+        // reales en Neon que reaparecían al borrar.
+        await deleteItem("growth", id);
         await saveGrowth(updated);
       } catch (err: any) {
         console.error("[AdminGrowth] delete saveGrowth falló:", err?.message || err);

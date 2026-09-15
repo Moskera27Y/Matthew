@@ -12,8 +12,7 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Image from "next/image";
 import { prepareUploadImage } from "@/lib/image";
-import { formatDateES } from "@/lib/utils";
-import { BIRTH_DATE } from "@/lib/constants";
+import { formatDateES, babyAgeForDate } from "@/lib/utils";
 
 export default function AdminGallery() {
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -28,14 +27,9 @@ export default function AdminGallery() {
   const [preview, setPreview] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Edad del bebé a partir de una fecha calendario (no de hoy ni de la subida)
-  const ageForDate = (isoDate: string) => {
-    const days = Math.max(
-      0,
-      Math.floor((new Date(isoDate).getTime() - BIRTH_DATE.getTime()) / (1000 * 60 * 60 * 24))
-    );
-    return { days, weeks: Math.floor(days / 7), months: Math.floor(days / 30), years: Math.floor(days / 365) };
-  };
+  // Edad del bebé a partir de la fecha calendario del suceso (local, sin
+  // corrimiento UTC): la misma base en crecimiento, hitos y galería.
+  const ageForDate = babyAgeForDate;
 
   useEffect(() => {
     loadPhotos().then(setPhotos).catch(() => setPhotos([]));
