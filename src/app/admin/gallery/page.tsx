@@ -11,6 +11,8 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Image from "next/image";
+import { formatDateES } from "@/lib/utils";
+import { BIRTH_DATE } from "@/lib/constants";
 
 export default function AdminGallery() {
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -21,8 +23,18 @@ export default function AdminGallery() {
   // Formulario del modal
   const [caption, setCaption] = useState("");
   const [category, setCategory] = useState<PhotoCategory>("daily");
+  const [photoDate, setPhotoDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [preview, setPreview] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Edad del bebé a partir de una fecha calendario (no de hoy ni de la subida)
+  const ageForDate = (isoDate: string) => {
+    const days = Math.max(
+      0,
+      Math.floor((new Date(isoDate).getTime() - BIRTH_DATE.getTime()) / (1000 * 60 * 60 * 24))
+    );
+    return { days, weeks: Math.floor(days / 7), months: Math.floor(days / 30), years: Math.floor(days / 365) };
+  };
 
   useEffect(() => {
     loadPhotos().then(setPhotos).catch(() => setPhotos([]));
@@ -52,6 +64,7 @@ export default function AdminGallery() {
   const openAddModal = () => {
     setCaption("");
     setCategory("daily");
+    setPhotoDate(new Date().toISOString().split("T")[0]);
     setPreview(null);
     setShowAddModal(true);
     setTimeout(() => fileInputRef.current?.click(), 100);
@@ -89,6 +102,22 @@ export default function AdminGallery() {
     }
   };
 
+  // Corregir la fecha de una foto ya guardada (las subidas antes mostraban
+  // la fecha de subida porque el modal no pedía fecha del suceso)
+  const handleDateChange = async (id: string, newDate: string) => {
+    if (!newDate) return;
+    const updated = photos.map((p) =>
+      p.id === id ? { ...p, date: newDate, babyAge: ageForDate(newDate) } : p
+    );
+    setPhotos(updated);
+    try {
+      await savePhotos(updated);
+      window.dispatchEvent(new Event("storage"));
+    } catch (err: any) {
+      alert("No se guardó la fecha: " + (err?.message || "error"));
+    }
+  };
+
   const handleAddPhoto = async () => {
     if (!preview) return;
     const newPhoto: Photo = {
@@ -96,8 +125,8 @@ export default function AdminGallery() {
       src: preview, // URL de Blob (no base64)
       alt: caption || "Foto de Matthew",
       caption: caption || "Foto de Matthew",
-      date: new Date().toISOString().split("T")[0],
-      babyAge: { days: 0, weeks: 0, months: 0, years: 0 },
+      date: photoDate, // fecha en que se tomó la foto, no fecha de subida
+      babyAge: ageForDate(photoDate),
       category: category,
       order: photos.length + 1,
     };
@@ -196,7 +225,16 @@ export default function AdminGallery() {
               <h3 className="text-sm font-medium text-charcoal truncate mb-1">
                 {photo.caption || photo.alt}
               </h3>
-              <p className="text-xs text-mist-gray">{photo.date}</p>
+              <p className="text-xs text-mist-gray mb-1">📅 {formatDateES(photo.date)}</p>
+              <label className="block text-[11px] text-mist-gray mb-0.5">
+                Fecha en que se tomó
+              </label>
+              <input
+                type="date"
+                value={(photo.date || "").slice(0, 10)}
+                onChange={(e) => handleDateChange(photo.id, e.target.value)}
+                className="w-full px-2 py-1 rounded-lg border border-mist-gray/30 bg-pearl-white text-xs text-charcoal"
+              />
             </motion.div>
           ))}
         </div>
@@ -293,6 +331,19 @@ export default function AdminGallery() {
                   onChange={(e) => setCaption(e.target.value)}
                   placeholder="Ej: Matthew sonriendo"
                   className="w-full px-3 py-2 border border-mist-gray/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-dusty-rose/20 text-charcoal text-sm"
+                />
+              </div>
+
+              {/* Campo fecha: cuándo se tomó la foto (no cuándo se sube) */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-charcoal mb-1">
+                  Fecha en que se tomó la foto
+                </label>
+                <input
+                  type="date"
+                  value={photoDate}
+                  onChange={(e) => setPhotoDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-mist-gray/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-dusty-rose/20 text-charcoal text-sm bg-white"
                 />
               </div>
 

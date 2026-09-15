@@ -116,7 +116,7 @@ export default function AdminMilestones() {
             <label className="text-xs text-mist-gray">Fecha</label>
             <input
               type="date"
-              value={data.date}
+              value={(data.date || "").slice(0, 10)}
               onChange={(e) => handleChange("date", e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-mist-gray/30 bg-pearl-white text-sm"
             />

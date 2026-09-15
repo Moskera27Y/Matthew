@@ -1,7 +1,7 @@
 // src/components/gallery/PhotoCard.tsx
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Photo } from "@/types/photo";
 import { calculateAge } from "@/lib/utils";
 import { photoCategoryLabels } from "@/data/photos";
@@ -25,11 +25,19 @@ export default memo(function PhotoCard({ photo, onClick, index }: PhotoCardProps
   const aspects = ["aspect-[4/5]", "aspect-square", "aspect-[3/4]", "aspect-[4/3]", "aspect-square", "aspect-[4/5]"];
   const aspect = aspects[index % aspects.length];
 
+  // Tilt 3D que sigue el cursor (springs suaves, máx ±6°)
+  const mx = useMotionValue(0.5);
+  const my = useMotionValue(0.5);
+  const rotateX = useSpring(useTransform(my, [0, 1], [6, -6]), { stiffness: 250, damping: 22 });
+  const rotateY = useSpring(useTransform(mx, [0, 1], [-6, 6]), { stiffness: 250, damping: 22 });
+
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 24, scale: 0.96 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
       viewport={{ once: true, margin: "-40px" }}
+      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
       transition={{
         duration: 0.5,
         delay: (index % 6) * 0.06,
@@ -42,7 +50,17 @@ export default memo(function PhotoCard({ photo, onClick, index }: PhotoCardProps
       <motion.div
         layoutId={`lightbox-${photo.id}`}
         whileHover={{ y: -6 }}
+        onMouseMove={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          mx.set((e.clientX - r.left) / r.width);
+          my.set((e.clientY - r.top) / r.height);
+        }}
+        onMouseLeave={() => {
+          mx.set(0.5);
+          my.set(0.5);
+        }}
         onClick={() => onClick(photo)}
+        style={{ rotateX, rotateY, transformPerspective: 800 }}
         className="group relative cursor-pointer rounded-2xl overflow-hidden border border-white/50 shadow-subtle hover:shadow-strong transition-all duration-300"
       >
         {/* Aspecto variable editorial */}
@@ -60,6 +78,9 @@ export default memo(function PhotoCard({ photo, onClick, index }: PhotoCardProps
             loading={index < 12 ? "eager" : "lazy"}
             onLoad={() => setImgLoaded(true)}
           />
+
+          {/* Brillo que barre la foto al hover */}
+          <div className="pointer-events-none absolute -inset-full bg-gradient-to-tr from-transparent via-white/25 to-transparent rotate-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
 
           {/* Caption siempre visible (táctil-friendly) con gradiente */}
           <div className="absolute bottom-0 left-0 right-0 p-3 pt-8 bg-gradient-to-t from-black/55 via-black/20 to-transparent text-white">

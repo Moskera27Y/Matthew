@@ -52,11 +52,13 @@ export default function GrowthTable({ records }: GrowthTableProps) {
           {sorted.map((record, i) => (
             <motion.tr
               key={record.id}
+              layout
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 * i, duration: 0.4 }}
-              className="border-b border-mist-gray/5 hover:bg-warm-ivory/20 transition-colors"
+              whileHover={{ scale: 1.008, backgroundColor: "rgba(253,242,243,0.6)" }}
+              className="border-b border-mist-gray/5 transition-colors cursor-default"
             >
               <td className="py-3 px-4">
                 <span className="text-sm text-taupe">

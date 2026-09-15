@@ -3,8 +3,9 @@
 
 import { motion, useAnimation } from "framer-motion";
 import { GrowthRecord } from "@/types/growth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ageString } from "@/data/milestones";
+import { formatDateES } from "@/lib/utils";
 
 interface GrowthChartProps {
   records: GrowthRecord[];
@@ -16,6 +17,8 @@ const HEIGHT_BY_AGE_MONTHS = [50.5, 57.0, 62.1, 66.0, 69.2, 71.4, 73.2, 74.6, 75
 
 export default function GrowthChart({ records }: GrowthChartProps) {
   const controls = useAnimation();
+  // Punto bajo el cursor: { serie peso/estatura, índice } → tooltip + resaltado
+  const [hover, setHover] = useState<{ s: "w" | "h"; i: number } | null>(null);
 
   useEffect(() => {
     controls.start({
@@ -30,12 +33,14 @@ export default function GrowthChart({ records }: GrowthChartProps) {
     x: i,
     y: r.weight,
     label: ageString(r.babyAge),
+    date: formatDateES(r.date),
   }));
 
   const heightData = records.map((r, i) => ({
     x: i,
     y: r.height,
     label: ageString(r.babyAge),
+    date: formatDateES(r.date),
   }));
 
   // Chart dimensions
@@ -70,6 +75,27 @@ export default function GrowthChart({ records }: GrowthChartProps) {
     heightData
       .map((d, i) => `${margin.left + xScale(i)},${margin.top + yScaleH(d.y)}`)
       .join(" L");
+
+  // Tooltip del punto bajo el cursor (coordenadas SVG) — después de las escalas
+  const hoverPoint = hover
+    ? {
+        cx: margin.left + xScale(hover.i),
+        cy:
+          margin.top +
+          (hover.s === "w"
+            ? yScaleW(weightData[hover.i]?.y ?? 0)
+            : yScaleH(heightData[hover.i]?.y ?? 0)),
+        text:
+          hover.s === "w"
+            ? `${(weightData[hover.i]?.y ?? 0).toFixed(1)} kg`
+            : `${heightData[hover.i]?.y ?? 0} cm`,
+        sub:
+          hover.s === "w"
+            ? weightData[hover.i]?.date ?? ""
+            : heightData[hover.i]?.date ?? "",
+        color: hover.s === "w" ? "var(--color-dusty-rose)" : "var(--color-sky-soft)",
+      }
+    : null;
 
   return (
     <motion.div
@@ -203,33 +229,109 @@ export default function GrowthChart({ records }: GrowthChartProps) {
           style={{ zIndex: 4 }}
         />
 
-        {/* Weight points */}
+        {/* Weight points (interactivos: hover → tooltip) */}
         {weightData.map((d, i) => (
-          <motion.circle
-            key={`w-${i}`}
-            cx={margin.left + xScale(i)}
-            cy={margin.top + yScaleW(d.y)}
-            r="3"
-            fill="var(--color-dusty-rose)"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.3 + i * 0.1, duration: 0.3 }}
-          />
+          <g key={`w-${i}`}>
+            <circle
+              cx={margin.left + xScale(i)}
+              cy={margin.top + yScaleW(d.y)}
+              r="12"
+              fill="transparent"
+              style={{ cursor: "pointer" }}
+              onMouseEnter={() => setHover({ s: "w", i })}
+              onMouseLeave={() => setHover(null)}
+            />
+            <motion.circle
+              cx={margin.left + xScale(i)}
+              cy={margin.top + yScaleW(d.y)}
+              r={hover?.s === "w" && hover?.i === i ? 5.5 : 3}
+              fill="var(--color-dusty-rose)"
+              stroke="#fff"
+              strokeWidth={hover?.s === "w" && hover?.i === i ? 2 : 0}
+              style={{ transition: "r 0.15s ease", pointerEvents: "none" }}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.3 + i * 0.1, duration: 0.3 }}
+            />
+          </g>
         ))}
 
-        {/* Height points */}
+        {/* Height points (interactivos: hover → tooltip) */}
         {heightData.map((d, i) => (
-          <motion.circle
-            key={`h-${i}`}
-            cx={margin.left + xScale(i)}
-            cy={margin.top + yScaleH(d.y)}
-            r="3"
-            fill="var(--color-sky-soft)"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.4 + i * 0.1, duration: 0.3 }}
-          />
+          <g key={`h-${i}`}>
+            <circle
+              cx={margin.left + xScale(i)}
+              cy={margin.top + yScaleH(d.y)}
+              r="12"
+              fill="transparent"
+              style={{ cursor: "pointer" }}
+              onMouseEnter={() => setHover({ s: "h", i })}
+              onMouseLeave={() => setHover(null)}
+            />
+            <motion.circle
+              cx={margin.left + xScale(i)}
+              cy={margin.top + yScaleH(d.y)}
+              r={hover?.s === "h" && hover?.i === i ? 5.5 : 3}
+              fill="var(--color-sky-soft)"
+              stroke="#fff"
+              strokeWidth={hover?.s === "h" && hover?.i === i ? 2 : 0}
+              style={{ transition: "r 0.15s ease", pointerEvents: "none" }}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.4 + i * 0.1, duration: 0.3 }}
+            />
+          </g>
         ))}
+
+        {/* Tooltip flotante del punto activo */}
+        {hoverPoint && (
+          <g style={{ pointerEvents: "none" }}>
+            <line
+              x1={hoverPoint.cx}
+              y1={hoverPoint.cy}
+              x2={hoverPoint.cx}
+              y2={margin.top + innerHeight}
+              stroke={hoverPoint.color}
+              strokeWidth="1"
+              strokeDasharray="3 3"
+              opacity="0.5"
+            />
+            <g
+              transform={`translate(${Math.min(
+                Math.max(hoverPoint.cx - 70, margin.left),
+                width - margin.right - 140
+              )},${Math.max(hoverPoint.cy - 56, 4)})`}
+            >
+              <rect
+                width="140"
+                height="44"
+                rx="10"
+                fill="rgba(255,255,255,0.96)"
+                stroke={hoverPoint.color}
+                strokeWidth="1.5"
+              />
+              <text
+                x="70"
+                y="19"
+                textAnchor="middle"
+                fontSize="13"
+                fontWeight="700"
+                fill="var(--color-charcoal)"
+              >
+                {hoverPoint.text}
+              </text>
+              <text
+                x="70"
+                y="34"
+                textAnchor="middle"
+                fontSize="10"
+                fill="var(--color-taupe)"
+              >
+                {hoverPoint.sub}
+              </text>
+            </g>
+          </g>
+        )}
       </svg>
 
       {/* Legend */}

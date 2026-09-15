@@ -105,15 +105,17 @@ export default function Gallery({ photos }: GalleryProps) {
       </motion.div>
 
       {/* Masonry editorial: columnas CSS con ritmo visual variado */}
-      <AnimatePresence>
-        <motion.div
-          className="columns-2 sm:columns-3 xl:columns-4 gap-4 sm:gap-5 [column-fill:_balance]"
-          layout
-        >
+      <motion.div
+        className="columns-2 sm:columns-3 xl:columns-4 gap-4 sm:gap-5 [column-fill:_balance]"
+        layout
+      >
+        <AnimatePresence mode="popLayout">
           {sortedPhotos.length === 0 ? (
             <motion.div
+              key="empty"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               className="col-span-full text-center py-16"
             >
               <p className="text-mist-gray">
@@ -130,8 +132,8 @@ export default function Gallery({ photos }: GalleryProps) {
               />
             ))
           )}
-        </motion.div>
-      </AnimatePresence>
+        </AnimatePresence>
+      </motion.div>
 
       {/* Lightbox */}
       {lightboxOpen && currentPhoto && (

@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Edit, Trash2, Save, X } from "lucide-react";
 import { GrowthRecord } from "@/types/growth";
-import { loadGrowth, saveGrowth } from "@/services/adminService";
+import { loadGrowth, saveGrowth, deleteItem } from "@/services/adminService";
 import { ageString } from "@/data/milestones";
 import AdminLayout from "@/components/admin/AdminLayout";
 import Button from "@/components/ui/Button";
@@ -21,7 +21,7 @@ function GrowthForm({
   onSave: (updated: GrowthRecord) => void;
   onCancel: () => void;
 }) {
-  const [date, setDate] = useState(record.date);
+  const [date, setDate] = useState((record.date || "").slice(0, 10));
   const [weight, setWeight] = useState(record.weight);
   const [height, setHeight] = useState(record.height);
   const [head, setHead] = useState<string>(String(record.headCircumference || ""));
@@ -148,6 +148,8 @@ export default function AdminGrowth() {
       const updated = records.filter((r) => r.id !== id);
       setRecords(updated);
       try {
+        // DELETE explícito: el POST es upsert-only y el registro reaparecería
+        if (!id.startsWith("temp-")) await deleteItem("growth", id);
         await saveGrowth(updated);
       } catch (err: any) {
         console.error("[AdminGrowth] delete saveGrowth falló:", err?.message || err);
@@ -155,7 +157,9 @@ export default function AdminGrowth() {
     }
   };
 
-  const handleAddNew = async () => {
+  const handleAddNew = () => {
+    // Solo local: se persiste al Guardar. Antes se guardaba de inmediato un
+    // registro en ceros con fecha de hoy (basura con "fecha de creación").
     const newRecord: GrowthRecord = {
       id: `temp-${Date.now()}`,
       date: new Date().toISOString().split("T")[0],
@@ -165,14 +169,16 @@ export default function AdminGrowth() {
       notes: "",
       createdAt: new Date().toISOString(),
     };
-    const updated = [newRecord, ...records];
-    setRecords(updated);
-    try {
-      await saveGrowth(updated);
-    } catch (err: any) {
-      console.error("[AdminGrowth] addNew saveGrowth falló:", err?.message || err);
-    }
+    setRecords([newRecord, ...records]);
     setEditingId(newRecord.id);
+  };
+
+  const handleCancelEdit = () => {
+    // Si era un registro nuevo sin guardar, se descarta (no queda en Neon)
+    if (editingId?.startsWith("temp-")) {
+      setRecords(records.filter((r) => r.id !== editingId));
+    }
+    setEditingId(null);
   };
 
   const getEditingRecord = () => records.find((r) => r.id === editingId);
@@ -200,7 +206,7 @@ export default function AdminGrowth() {
             <GrowthForm
               record={getEditingRecord()!}
               onSave={handleSave}
-              onCancel={() => setEditingId(null)}
+              onCancel={handleCancelEdit}
             />
           )}
         </AnimatePresence>
