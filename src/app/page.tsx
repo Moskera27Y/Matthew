@@ -4,7 +4,7 @@
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Hero from "@/components/hero/Hero";
-import Timeline from "@/components/timeline/Timeline";
+import MemoryWall from "@/components/memories/MemoryWall";
 import Gallery from "@/components/gallery/Gallery";
 import GrowthSection from "@/components/growth/GrowthSection";
 import SiblingsSection from "@/components/brothers/SiblingsSection";
@@ -28,7 +28,7 @@ export default function Home() {
         <Hero />
         <SectionDivider variant="wave" />
 
-        <Timeline milestones={milestones} />
+        <MemoryWall milestones={milestones} />
         <SectionDivider variant="dots" />
         <Gallery photos={photos} />
         <SectionDivider variant="line" />
