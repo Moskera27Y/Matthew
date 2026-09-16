@@ -218,6 +218,7 @@ export default function AdminMilestones() {
               variant="ghost"
               size="sm"
               onClick={() => fileRef.current?.click()}
+              disabled={uploading}
             >
               <Upload size={14} className="mr-1" />
               {uploading ? "Subiendo..." : "Agregar foto"}
@@ -226,9 +227,9 @@ export default function AdminMilestones() {
         </div>
 
         <div className="flex gap-2 mt-4">
-          <Button variant="primary" size="sm" onClick={handleSave}>
+          <Button variant="primary" size="sm" onClick={handleSave} disabled={uploading}>
             <Save size={14} className="mr-1" />
-            Guardar
+            {uploading ? "Espera la foto..." : "Guardar"}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setEditingId(null)}>
             <X size={14} className="mr-1" />
