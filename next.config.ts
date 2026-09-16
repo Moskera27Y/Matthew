@@ -29,9 +29,8 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
-          // Permitir incrustar el sitio en iframes de otras páginas:
-          // SIN X-Frame-Options + CSP frame-ancestors * (cualquier origen padre).
-          { key: "Content-Security-Policy", value: "frame-ancestors *" },
+          // CSP frame-ancestors lo pone middleware.ts por ruta:
+          // público frame-ancestors * (iframe permitido), /admin/* DENY.
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         ],
       },

@@ -11,6 +11,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { neon } from "@neondatabase/serverless";
+import { verifyAdminToken, bearerFrom } from "@/lib/adminAuth";
 import { DEFAULT_BROTHERS } from "@/types/brother";
 import { DEFAULT_EVENT } from "@/types/event";
 import { PHOTOS } from "@/data/photos";
@@ -149,13 +150,21 @@ function anyIds(ids: string[]) {
 
 export async function POST(req: Request) {
   try {
+    // 🔒 Writes solo con token admin (firmado por /api/admin/login). El GET
+    // público sigue abierto: el homepage lo necesita sin sesión.
+    if (!verifyAdminToken(bearerFrom(req))) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
     if (!connectionString) return NextResponse.json({ error: "DATABASE_URL missing" }, { status: 500 });
+    // Límite 1MB de body: sin esto, un POST gigante es DoS barato.
+    const len = Number(req.headers.get("content-length") || "0");
+    if (len > 1_000_000) return NextResponse.json({ error: "Body demasiado grande" }, { status: 413 });
     const sql = getSQL();
     await ensureSeeded(sql);
     const body = await req.json();
 
     // BROTHERS: upsert (NOT sync-delete — evita data loss si browser tiene estado parcial)
-    if (body.brothers) {
+    if (Array.isArray(body.brothers)) {
       for (const b of body.brothers as any[]) {
         await sql`INSERT INTO "Brother" (id, name, role, age, "photoUrl", message, category, "order", "createdAt", "updatedAt")
                     VALUES (${b.id || `b-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`}, ${b.name}, ${b.role}, ${b.age}, ${b.photoUrl || ""}, ${b.message || ""}, ${b.category || "primos"}, ${b.order || 0}, NOW(), NOW())
@@ -173,8 +182,9 @@ export async function POST(req: Request) {
     }
 
     // PHOTOS: upsert (NO sync-delete — borrado via DELETE explícito)
-    if (body.photos) {
+    if (Array.isArray(body.photos)) {
       for (const p of body.photos as any[]) {
+        if (!p || typeof p.src !== "string" || !p.src) continue; // fila sin foto → skip, no basura en DB
         const pba = p.babyAge || { days: 0, weeks: 0, months: 0, years: 0 };
         const pcat = p.category === "familia" ? "family" : (p.category || "family");
         await sql`INSERT INTO "Photo" (id, src, alt, caption, category, date, "babyAgeDays", "babyAgeWeeks", "babyAgeMonths", "babyAgeYears", "order", "createdAt", "updatedAt")
@@ -184,7 +194,7 @@ export async function POST(req: Request) {
     }
 
     // MILESTONES: upsert
-    if (body.milestones) {
+    if (Array.isArray(body.milestones)) {
       for (const m of body.milestones as any[]) {
         const mba = m.babyAge || { days: 0, weeks: 0, months: 0, years: 0 };
         await sql`INSERT INTO "Milestone" (id, title, date, description, icon, category, "order", location, "parentNote", images, "babyAgeDays", "babyAgeWeeks", "babyAgeMonths", "babyAgeYears", "createdAt", "updatedAt")
@@ -194,14 +204,14 @@ export async function POST(req: Request) {
     }
 
     // SETTINGS
-    if (body.settings) {
+    if (body.settings && typeof body.settings === "object") {
       for (const [k, v] of Object.entries(body.settings)) {
         await sql`INSERT INTO "Setting" (key, value) VALUES (${k}, ${String(v ?? "")}) ON CONFLICT (key) DO UPDATE SET value=${String(v ?? "")}`;
       }
     }
 
     // GROWTH: upsert (NO sync-delete)
-    if (body.growth !== undefined) {
+    if (Array.isArray(body.growth)) {
       for (const r of body.growth as any[]) {
         const ba = r.babyAge || { days: 0, weeks: 0, months: 0, years: 0 };
         await sql`INSERT INTO "GrowthRecord" (id, date, "babyAgeDays", "babyAgeWeeks", "babyAgeMonths", "babyAgeYears", weight, height, "headCircumference", notes, "createdAt")
@@ -213,7 +223,7 @@ export async function POST(req: Request) {
     // FAMILY: upsert — INCLUYE updatedAt (columna NOT NULL sin default en Neon;
     // omitirlo daba 500 "null value in column updatedAt" y el miembro nunca
     // llegaba al homepage aunque el admin lo mostrara como guardado)
-    if (body.family !== undefined) {
+    if (Array.isArray(body.family)) {
       for (const f of body.family as any[]) {
         await sql`INSERT INTO "FamilyMember" (id, name, relationship, role, "photoUrl", quote, "order", "createdAt", "updatedAt")
                     VALUES (${f.id || `f-${Date.now()}`}, ${f.name}, ${f.relationship || ""}, ${f.role || ""}, ${f.photoUrl || ""}, ${f.quote || ""}, ${f.order || 0}, NOW(), NOW())
@@ -222,7 +232,7 @@ export async function POST(req: Request) {
     }
 
     // STORIES: upsert
-    if (body.stories) {
+    if (Array.isArray(body.stories)) {
       for (const s of body.stories as any[]) {
         await sql`INSERT INTO "Story" (id, title, content, date, "photoUrl", "createdAt", "updatedAt")
                     VALUES (${s.id}, ${s.title}, ${s.content || ""}, ${s.date || ""}, ${s.photoUrl || ""}, NOW(), NOW())
@@ -239,13 +249,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, source: "server-neon" });
   } catch (e: any) {
     console.error("[api/admin/state] POST failed:", e?.message || e);
-    return NextResponse.json({ error: "state save failed", detail: (e as Error)?.message?.slice(0, 120) }, { status: 500 });
+    // En prod no se filtra detalle interno de Neon (fingerprinting).
+    const detail = process.env.NODE_ENV === "production" ? undefined : (e as Error)?.message?.slice(0, 120);
+    return NextResponse.json({ error: "state save failed", detail }, { status: 500 });
   }
 }
 
 // DELETE /api/admin/state?table=photos&id=xyz → borrado EXPLÍCITO de un row
 export async function DELETE(req: Request) {
   try {
+    // 🔒 Borrado solo con token admin.
+    if (!verifyAdminToken(bearerFrom(req))) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
     if (!connectionString) return NextResponse.json({ error: "DATABASE_URL missing" }, { status: 500 });
     const sql = getSQL();
     const url = new URL(req.url);
@@ -267,6 +283,7 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ ok: true, deleted: id, table: qTable });
   } catch (e: any) {
     console.error("[api/admin/state] DELETE failed:", e?.message || e);
-    return NextResponse.json({ error: "delete failed", detail: (e as Error)?.message?.slice(0, 120) }, { status: 500 });
+    const detail = process.env.NODE_ENV === "production" ? undefined : (e as Error)?.message?.slice(0, 120);
+    return NextResponse.json({ error: "delete failed", detail }, { status: 500 });
   }
 }

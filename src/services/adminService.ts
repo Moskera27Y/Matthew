@@ -15,6 +15,7 @@ import { Story } from "@/types/story";
 import { STORIES } from "@/data/stories";
 import { FamilyMember } from "@/types/family";
 import { FAMILY_MEMBERS } from "@/data/family";
+import { authHeaders, clearSession } from "@/services/auth";
 
 // Keys de localStorage — fallback OFFLINE para que el admin funcione sin red.
 export const storageKeys = {
@@ -69,7 +70,7 @@ async function saveToServer(patch: Record<string, unknown>): Promise<void> {
     try {
       return await fetch(STATE_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         cache: "no-store",
         body: JSON.stringify(patch),
         signal: ctrl.signal,
@@ -84,6 +85,12 @@ async function saveToServer(patch: Record<string, unknown>): Promise<void> {
   } catch {
     res = await attempt(); // un reintento ante abort/red caída
   }
+  if (res.status === 401) {
+    // Sesión expirada o sin login: limpiar y mandar al login.
+    clearSession();
+    if (typeof window !== "undefined") window.location.href = "/admin/login";
+    throw new Error("Sesión expirada, entra de nuevo");
+  }
   if (!res.ok) {
     const body = (await res.text()).slice(0, 200);
     throw new Error(`POST /api/admin/state falló (${res.status}): ${body}`);
@@ -95,7 +102,13 @@ export async function deleteItem(table: "photos" | "brothers" | "family" | "grow
   const res = await fetch(`${STATE_URL}?table=${table}&id=${encodeURIComponent(id)}`, {
     method: "DELETE",
     cache: "no-store",
+    headers: { ...authHeaders() },
   });
+  if (res.status === 401) {
+    clearSession();
+    if (typeof window !== "undefined") window.location.href = "/admin/login";
+    throw new Error("Sesión expirada, entra de nuevo");
+  }
   if (!res.ok) throw new Error(`DELETE /api/admin/state falló (${res.status})`);
 }
 

@@ -47,8 +47,8 @@ export const DEMO_USERS: AuthUser[] = [
   },
 ];
 
-// Credenciales de demo
+// Email del admin para el login (la CONTRASEÑA vive solo en el servidor:
+// env ADMIN_TOKEN. Nunca hardcodear secretos en este archivo — llega al bundle).
 export const DEMO_CREDENTIALS = {
   email: "admin@matthew-journal.com",
-  password: "matthew123",
 };

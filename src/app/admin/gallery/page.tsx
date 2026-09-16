@@ -12,6 +12,7 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Image from "next/image";
 import { prepareUploadImage } from "@/lib/image";
+import { authHeaders } from "@/services/auth";
 import { formatDateES, babyAgeForDate } from "@/lib/utils";
 
 export default function AdminGallery() {
@@ -77,7 +78,7 @@ export default function AdminGallery() {
       form.append("alt", caption || "Foto de Matthew");
       form.append("caption", caption || "Foto de Matthew");
       form.append("category", category as string);
-      const res = await fetch("/api/upload", { method: "POST", body: form });
+      const res = await fetch("/api/upload", { method: "POST", headers: { ...authHeaders() }, body: form });
       // Vercel Blob put() devuelve HTTP 201 con JSON {url,...}. El chequeo ">204" viejo
       // (leftover de 204 empty-body) lo salteaba → data quedaba {} → "no se recibió URL"
       // aunque el blob subió OK. Forzamos parse de JSON en cualquier 2xx.

@@ -8,6 +8,7 @@ import { Upload, Trash2, ZoomIn } from "lucide-react";
 import { loadSettings, saveSettings, AdminSettings } from "@/services/adminService";
 import Button from "@/components/ui/Button";
 import { prepareUploadImage } from "@/lib/image";
+import { authHeaders } from "@/services/auth";
 
 export default function PhotoEditor() {
   const [babyPhoto, setBabyPhoto] = useState("");
@@ -35,7 +36,7 @@ export default function PhotoEditor() {
       form.append("alt", "Foto de Matthew");
       form.append("caption", "Foto de Matthew");
       form.append("category", "family");
-      const res = await fetch("/api/upload", { method: "POST", body: form });
+      const res = await fetch("/api/upload", { method: "POST", headers: { ...authHeaders() }, body: form });
       // Vercel Blob put() devuelve HTTP 201 con JSON {url,...}. El chequeo ">204" viejo
       // lo salteaba → data quedaba {} → "no se recibió URL de Blob". Forzamos parse en cualquier 2xx.
       const text = await res.text();

@@ -16,12 +16,13 @@ export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(false);
 
-    const user = authenticate(email, password);
+    // Verificación en SERVIDOR (/api/admin/login). El token queda en sessionStorage.
+    const user = await authenticate(email, password).catch(() => null);
     if (user) {
       saveSession(user);
       router.push("/admin/family");
@@ -126,10 +127,7 @@ export default function AdminLogin() {
           transition={{ delay: 0.5 }}
           className="mt-8 text-center text-xs text-mist-gray"
         >
-          <p>Versión demo — próximamente autenticación con Google</p>
-          <p className="font-mono text-dusty-rose">
-            Email: {DEMO_CREDENTIALS.email} | Pass: {DEMO_CREDENTIALS.password}
-          </p>
+          <p>Acceso privado — solo el administrador</p>
         </motion.div>
       </motion.div>
     </div>

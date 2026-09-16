@@ -10,6 +10,7 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Avatar from "@/components/ui/Avatar";
 import { prepareUploadImage } from "@/lib/image";
+import { authHeaders } from "@/services/auth";
 
 function FamilyMemberForm({
   member,
@@ -72,7 +73,7 @@ function FamilyMemberForm({
                     form.append("alt", name || "Foto");
                     form.append("caption", relationship || "");
                     form.append("category", "family");
-                    const res = await fetch("/api/upload", { method: "POST", body: form });
+                    const res = await fetch("/api/upload", { method: "POST", headers: { ...authHeaders() }, body: form });
                     const text = await res.text();
                     let data: any = {};
                     if (text) try { data = JSON.parse(text); } catch { /* empty */ }

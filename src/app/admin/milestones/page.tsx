@@ -12,6 +12,7 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import { formatDateES, babyAgeForDate } from "@/lib/utils";
 import { prepareUploadImage } from "@/lib/image";
+import { authHeaders } from "@/services/auth";
 import { BIRTH_DATE } from "@/lib/constants";
 
 export default function AdminMilestones() {
@@ -89,7 +90,7 @@ export default function AdminMilestones() {
         form.append("alt", data.title || "Recuerdo de Matthew");
         form.append("caption", data.title || "");
         form.append("category", "family");
-        const res = await fetch("/api/upload", { method: "POST", body: form });
+        const res = await fetch("/api/upload", { method: "POST", headers: { ...authHeaders() }, body: form });
         const text = await res.text();
         let payload: any = {};
         if (text) try { payload = JSON.parse(text); } catch { /* empty */ }

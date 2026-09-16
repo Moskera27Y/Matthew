@@ -25,6 +25,7 @@ import {
 } from "@/types/brother";
 import { loadBrothers, saveBrothers, deleteItem } from "@/services/adminService";
 import { prepareUploadImage } from "@/lib/image";
+import { authHeaders } from "@/services/auth";
 
 // Mapa de etiquetas legibles para el role
 const roleLabels: Record<BrotherRole, string> = {
@@ -67,7 +68,7 @@ function BrotherModal({ brother, onClose, onSave, existing }: ModalProps) {
       payload.append("alt", form.name || "Foto hermano");
       payload.append("caption", form.name || "");
       payload.append("category", "family");
-      const res = await fetch("/api/upload", { method: "POST", body: payload });
+      const res = await fetch("/api/upload", { method: "POST", headers: { ...authHeaders() }, body: payload });
       const text = await res.text();
       let data: any = {};
       if (text) try { data = JSON.parse(text); } catch { /* empty body */ }
