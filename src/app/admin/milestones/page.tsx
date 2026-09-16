@@ -69,6 +69,7 @@ export default function AdminMilestones() {
   const MilestoneForm = ({ milestone }: { milestone: Milestone }) => {
     const [data, setData] = useState(milestone);
     const [uploading, setUploading] = useState(false);
+    const [saving, setSaving] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
 
     const handleChange = (field: keyof Milestone, value: string) => {
@@ -112,9 +113,17 @@ export default function AdminMilestones() {
       setData({ ...data, images: [url, ...(data.images || []).filter((u) => u !== url)] });
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
       // babyAge desde la fecha calendario del suceso (local, sin corrimiento UTC)
-      handleSaveFn({ ...data, babyAge: babyAgeForDate(data.date) });
+      if (saving || uploading) return;
+      setSaving(true);
+      try {
+        await handleSaveFn({ ...data, babyAge: babyAgeForDate(data.date) });
+      } catch (err: any) {
+        alert("No se guardó el hito: " + (err?.message || "error"));
+      } finally {
+        setSaving(false);
+      }
     };
 
     return (
@@ -227,9 +236,9 @@ export default function AdminMilestones() {
         </div>
 
         <div className="flex gap-2 mt-4">
-          <Button variant="primary" size="sm" onClick={handleSave} disabled={uploading}>
+          <Button variant="primary" size="sm" onClick={handleSave} disabled={uploading || saving}>
             <Save size={14} className="mr-1" />
-            {uploading ? "Espera la foto..." : "Guardar"}
+            {uploading ? "Espera la foto..." : saving ? "Guardando..." : "Guardar"}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setEditingId(null)}>
             <X size={14} className="mr-1" />

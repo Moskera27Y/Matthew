@@ -61,12 +61,29 @@ async function loadFromServer(): Promise<any> {
 // ⚠️ NO traga el error: propaga el throw para que la UI avise al usuario
 // (antes se hacía console.warn → el admin creía que se guardaba y no se persistía).
 async function saveToServer(patch: Record<string, unknown>): Promise<void> {
-  const res = await fetch(STATE_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-    body: JSON.stringify(patch),
-  });
+  // Timeout 30s + 1 reintento: sin esto, un cold-start de Neon deja el
+  // botón Guardar colgado para siempre sin mensaje ("no hace nada").
+  const attempt = async (): Promise<Response> => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 30000);
+    try {
+      return await fetch(STATE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify(patch),
+        signal: ctrl.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+  let res: Response;
+  try {
+    res = await attempt();
+  } catch {
+    res = await attempt(); // un reintento ante abort/red caída
+  }
   if (!res.ok) {
     const body = (await res.text()).slice(0, 200);
     throw new Error(`POST /api/admin/state falló (${res.status}): ${body}`);
