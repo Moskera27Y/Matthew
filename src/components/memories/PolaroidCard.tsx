@@ -40,7 +40,7 @@ export default function PolaroidCard({ milestone, index }: PolaroidCardProps) {
       transition={{ delay: (index % 8) * 0.07, type: "spring", stiffness: 120, damping: 16 }}
       whileHover={{ rotate: 0, y: -8, scale: 1.03 }}
       onClick={() => setFlipped((v) => !v)}
-      className="cursor-pointer break-inside-avoid mb-5"
+      className="cursor-pointer break-inside-avoid mb-8 sm:mb-5"
       style={{ perspective: 900 }}
       title={flipped ? "Clic para ver la foto" : "Clic para leer el recuerdo"}
     >
@@ -57,7 +57,7 @@ export default function PolaroidCard({ milestone, index }: PolaroidCardProps) {
         >
           {/* Cinta adhesiva */}
           <div
-            className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-20 h-6 bg-amber-200/70 border-x border-dashed border-amber-300/60 shadow-sm z-10"
+            className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-24 sm:w-20 h-6 bg-amber-200/70 border-x border-dashed border-amber-300/60 shadow-sm z-10"
             style={{ transform: `translateX(-50%) rotate(${tapeTilt}deg)` }}
           />
           {/* Foto */}
@@ -80,11 +80,11 @@ export default function PolaroidCard({ milestone, index }: PolaroidCardProps) {
             )}
           </div>
           {/* Pie manuscrito */}
-          <div className="pt-2.5 pb-0.5 text-center">
-            <p className="font-decorative text-lg text-charcoal leading-tight line-clamp-2">
+          <div className="pt-3 sm:pt-2.5 pb-1 text-center">
+            <p className="font-decorative text-2xl sm:text-lg text-charcoal leading-tight line-clamp-2">
               {milestone.title}
             </p>
-            <p className="text-[11px] text-mist-gray mt-0.5">
+            <p className="text-xs sm:text-[11px] text-mist-gray mt-1 sm:mt-0.5">
               {formatDateES(milestone.date)}
             </p>
           </div>
@@ -96,27 +96,27 @@ export default function PolaroidCard({ milestone, index }: PolaroidCardProps) {
 
         {/* ===== REVERSO ===== */}
         <div
-          className="absolute inset-0 bg-pearl-white rounded-sm shadow-strong p-4 flex flex-col overflow-hidden"
+          className="absolute inset-0 bg-pearl-white rounded-sm shadow-strong p-5 sm:p-4 flex flex-col overflow-hidden"
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
         >
           <div className="text-center border-b border-dashed border-mist-gray/25 pb-2 mb-2">
-            <p className="font-decorative text-xl text-charcoal leading-tight line-clamp-1">
+            <p className="font-decorative text-2xl sm:text-xl text-charcoal leading-tight line-clamp-1">
               {milestone.title}
             </p>
-            <p className="text-[11px] text-dusty-rose font-semibold mt-0.5">
+            <p className="text-xs sm:text-[11px] text-dusty-rose font-semibold mt-1 sm:mt-0.5">
               {formatDateES(milestone.date)} • {ageString(milestone.babyAge)}
             </p>
           </div>
-          <p className="text-[13px] text-taupe leading-relaxed overflow-y-auto flex-1">
+          <p className="text-sm sm:text-[13px] text-taupe leading-relaxed overflow-y-auto flex-1">
             {milestone.description || "Un momento hermoso de Matthew."}
           </p>
           {milestone.location && (
-            <p className="flex items-center gap-1 text-[11px] text-mist-gray mt-2">
+            <p className="flex items-center gap-1 text-xs sm:text-[11px] text-mist-gray mt-2">
               <MapPin size={11} /> {milestone.location}
             </p>
           )}
           {milestone.parentNote && (
-            <p className="text-[11px] text-taupe italic mt-1.5 border-l-2 border-dusty-rose/30 pl-2 line-clamp-3">
+            <p className="text-xs sm:text-[11px] text-taupe italic mt-1.5 border-l-2 border-dusty-rose/30 pl-2 line-clamp-3">
               “{milestone.parentNote}”
             </p>
           )}

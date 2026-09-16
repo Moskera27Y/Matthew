@@ -43,12 +43,12 @@ export default function MemoryWall({ milestones }: MemoryWallProps) {
       />
 
       {/* Filtros */}
-      <div className="flex flex-wrap justify-center gap-2 mb-8">
+      <div className="flex flex-wrap justify-center gap-2 mb-8 px-1">
         {FILTERS.map((f) => (
           <button
             key={f.id}
             onClick={() => setFilter(f.id)}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${
+            className={`px-4 py-2 sm:py-1.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${
               filter === f.id
                 ? "bg-charcoal text-pearl-white shadow-subtle scale-105"
                 : "bg-pearl-white text-taupe border border-mist-gray/20 hover:border-dusty-rose/40 hover:scale-105"
@@ -59,8 +59,8 @@ export default function MemoryWall({ milestones }: MemoryWallProps) {
         ))}
       </div>
 
-      {/* Muro masonry */}
-      <motion.div layout className="columns-2 sm:columns-3 xl:columns-4 gap-5 [column-fill:_balance]">
+      {/* Muro: 1 columna grande en móvil, masonry en pantallas grandes */}
+      <motion.div layout className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-5 [column-fill:_balance] max-w-sm sm:max-w-none mx-auto">
         <AnimatePresence mode="popLayout">
           {visible.map((m, i) => (
             <PolaroidCard key={m.id} milestone={m} index={i} />
