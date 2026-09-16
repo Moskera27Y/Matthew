@@ -118,7 +118,13 @@ export default function AdminMilestones() {
       if (saving || uploading) return;
       setSaving(true);
       try {
-        await handleSaveFn({ ...data, babyAge: babyAgeForDate(data.date) });
+        const updated = { ...data, babyAge: babyAgeForDate(data.date) };
+        const updatedList = milestones.map((m) =>
+          m.id === updated.id ? updated : m
+        );
+        setMilestones(updatedList);
+        await saveMilestones(updatedList);
+        setEditingId(null);
       } catch (err: any) {
         alert("No se guardó el hito: " + (err?.message || "error"));
       } finally {
@@ -247,19 +253,6 @@ export default function AdminMilestones() {
         </div>
       </motion.div>
     );
-
-    const handleSaveFn = async (updated: Milestone) => {
-      const updatedList = milestones.map((m) =>
-        m.id === updated.id ? updated : m
-      );
-      setMilestones(updatedList);
-      try {
-        await saveMilestones(updatedList);
-        setEditingId(null);
-      } catch (err: any) {
-        alert("No se guardó el hito: " + (err?.message || "error"));
-      }
-    };
   };
 
   return (
