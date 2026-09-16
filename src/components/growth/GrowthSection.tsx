@@ -1,13 +1,12 @@
 // src/components/growth/GrowthSection.tsx
 "use client";
 
-import { motion, AnimatePresence, animate, useInView } from "framer-motion";
+import { motion, animate, useInView } from "framer-motion";
 import GrowthChart from "./GrowthChart";
 import GrowthTable from "./GrowthTable";
 import Container from "@/components/ui/Container";
 import SectionHeading from "@/components/ui/SectionHeading";
-import Button from "@/components/ui/Button";
-import { Plus, Weight, Ruler, TrendingUp } from "lucide-react";
+import { Weight, Ruler, ClipboardList, TrendingUp } from "lucide-react";
 import { GrowthRecord } from "@/types/growth";
 import { useEffect, useRef } from "react";
 
@@ -15,7 +14,7 @@ interface GrowthSectionProps {
   records: GrowthRecord[];
 }
 
-// Número que cuenta hacia arriba al entrar en vista (peso/estatura actual)
+// Número que cuenta hacia arriba al entrar en vista
 function CountUp({ value, decimals = 1, suffix = "" }: { value: number; decimals?: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
@@ -34,6 +33,50 @@ function CountUp({ value, decimals = 1, suffix = "" }: { value: number; decimals
 }
 
 export default function GrowthSection({ records }: GrowthSectionProps) {
+  const sorted = [...records].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  const latest = sorted[sorted.length - 1];
+  const prev = sorted[sorted.length - 2];
+
+  const cards = latest
+    ? [
+        {
+          icon: <Weight size={22} />,
+          label: "Peso actual",
+          value: <CountUp value={latest.weight} decimals={1} suffix=" kg" />,
+          delta:
+            prev !== undefined
+              ? { text: `${(latest.weight - prev.weight >= 0 ? "+" : "")}${(latest.weight - prev.weight).toFixed(1)} kg`, good: latest.weight - prev.weight >= 0 }
+              : null,
+          chip: "bg-dusty-rose/10 text-dusty-rose",
+          iconBox: "bg-gradient-to-br from-dusty-rose to-blush-pink text-white",
+          ring: "hover:border-dusty-rose/40",
+        },
+        {
+          icon: <Ruler size={22} />,
+          label: "Estatura actual",
+          value: <CountUp value={latest.height} decimals={0} suffix=" cm" />,
+          delta:
+            prev !== undefined
+              ? { text: `${(latest.height - prev.height >= 0 ? "+" : "")}${latest.height - prev.height} cm`, good: latest.height - prev.height >= 0 }
+              : null,
+          chip: "bg-sky-soft/15 text-sky-soft",
+          iconBox: "bg-gradient-to-br from-sky-soft to-mint-soft text-white",
+          ring: "hover:border-sky-soft/50",
+        },
+        {
+          icon: <ClipboardList size={22} />,
+          label: "Controles registrados",
+          value: <CountUp value={sorted.length} decimals={0} suffix="" />,
+          delta: null,
+          chip: "bg-lavender-soft/20 text-taupe",
+          iconBox: "bg-gradient-to-br from-lavender-soft to-blush-pink text-white",
+          ring: "hover:border-lavender-soft/50",
+        },
+      ]
+    : [];
+
   return (
     <Container id="growth" size="lg" className="section-alt-1">
       <SectionHeading
@@ -42,37 +85,47 @@ export default function GrowthSection({ records }: GrowthSectionProps) {
         description="Cada medida es un hito más en su viaje de crecimiento. Registramos peso, estatura y el amor de sus papás."
         icon={<TrendingUp size={16} />}
       />
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-        className="text-center mb-12"
-      >
 
-        <div className="flex justify-center gap-4 mb-8">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            whileHover={{ scale: 1.06, y: -2 }}
-            className="flex items-center gap-2 px-4 py-2 bg-dusty-rose/10 rounded-full text-sm text-taupe cursor-default"
-          >
-            <Weight size={16} className="text-dusty-rose" />
-            <span>{records.length > 0 ? <CountUp value={records[records.length - 1]?.weight ?? 0} decimals={1} suffix=" kg" /> : "—"}</span>
-          </motion.div>
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            whileHover={{ scale: 1.06, y: -2 }}
-            className="flex items-center gap-2 px-4 py-2 bg-sky-soft/20 rounded-full text-sm text-taupe cursor-default"
-          >
-            <Ruler size={16} className="text-sky-soft" />
-            <span>{records.length > 0 ? <CountUp value={records[records.length - 1]?.height ?? 0} decimals={0} suffix=" cm" /> : "—"}</span>
-          </motion.div>
+      {/* Tarjetas de stats con count-up + delta vs control anterior */}
+      {latest ? (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-10">
+          {cards.map((c, i) => (
+            <motion.div
+              key={c.label}
+              initial={{ opacity: 0, y: 28, scale: 0.96 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ delay: i * 0.12, type: "spring", stiffness: 140, damping: 17 }}
+              whileHover={{ y: -5, scale: 1.02 }}
+              className={`relative overflow-hidden bg-pearl-white rounded-3xl p-5 sm:p-6 shadow-subtle hover:shadow-strong border border-mist-gray/10 ${c.ring} transition-colors cursor-default`}
+            >
+              {/* brillo decorativo */}
+              <div className="pointer-events-none absolute -top-10 -right-10 w-32 h-32 rounded-full bg-gradient-to-br from-blush-pink/20 to-transparent blur-xl" />
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-sm ${c.iconBox}`}>
+                  {c.icon}
+                </div>
+                <p className="text-xs font-medium uppercase tracking-wider text-mist-gray">
+                  {c.label}
+                </p>
+              </div>
+              <p className="text-3xl sm:text-4xl font-heading-bold text-charcoal mb-2">
+                {c.value}
+              </p>
+              {c.delta ? (
+                <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${c.delta.good ? "bg-mint-soft/20 text-emerald-700" : "bg-dusty-rose/10 text-dusty-rose"}`}>
+                  <TrendingUp size={12} />
+                  {c.delta.text} vs anterior
+                </span>
+              ) : (
+                <span className={`inline-flex items-center text-xs px-2.5 py-1 rounded-full ${c.chip}`}>
+                  desde el nacimiento
+                </span>
+              )}
+            </motion.div>
+          ))}
         </div>
-      </motion.div>
+      ) : null}
 
       {/* Stats Grid */}
       <motion.div
@@ -82,7 +135,7 @@ export default function GrowthSection({ records }: GrowthSectionProps) {
         transition={{ delay: 0.2 }}
         className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12"
       >
-        <GrowthChart records={records} />
+        <GrowthChart records={sorted} />
 
         <motion.div
           initial={{ opacity: 0, x: 20 }}
@@ -93,7 +146,7 @@ export default function GrowthSection({ records }: GrowthSectionProps) {
           <h3 className="text-xl font-heading-bold text-charcoal mb-4">
             Registros
           </h3>
-          <GrowthTable records={records} />
+          <GrowthTable records={sorted} />
         </motion.div>
       </motion.div>
     </Container>

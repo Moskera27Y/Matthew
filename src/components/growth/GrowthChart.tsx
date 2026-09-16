@@ -1,7 +1,7 @@
 // src/components/growth/GrowthChart.tsx
 "use client";
 
-import { motion, useAnimation } from "framer-motion";
+import { motion, useAnimation, AnimatePresence } from "framer-motion";
 import { GrowthRecord } from "@/types/growth";
 import { useEffect, useState } from "react";
 import { ageString } from "@/data/milestones";
@@ -19,6 +19,9 @@ export default function GrowthChart({ records }: GrowthChartProps) {
   const controls = useAnimation();
   // Punto bajo el cursor: { serie peso/estatura, índice } → tooltip + resaltado
   const [hover, setHover] = useState<{ s: "w" | "h"; i: number } | null>(null);
+  // Leyenda interactiva: prender/apagar cada serie
+  const [showW, setShowW] = useState(true);
+  const [showH, setShowH] = useState(true);
 
   useEffect(() => {
     controls.start({
@@ -26,7 +29,15 @@ export default function GrowthChart({ records }: GrowthChartProps) {
       opacity: 1,
       transition: { duration: 2, ease: "easeOut" },
     });
-  }, [controls]);
+  }, [controls, records.length]);
+
+  if (records.length === 0) {
+    return (
+      <div className="w-full bg-pearl-white rounded-2xl p-8 shadow-subtle border border-mist-gray/10 text-center text-mist-gray">
+        <p className="text-sm">Aún no hay medidas para graficar.</p>
+      </div>
+    );
+  }
 
   // Convert records to chart points (using weeks as x-axis index)
   const weightData = records.map((r, i) => ({
@@ -49,6 +60,7 @@ export default function GrowthChart({ records }: GrowthChartProps) {
   const height = 320;
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
+  const bottomY = margin.top + innerHeight;
 
   // Scales
   const xScale = (i: number) =>
@@ -76,6 +88,11 @@ export default function GrowthChart({ records }: GrowthChartProps) {
       .map((d, i) => `${margin.left + xScale(i)},${margin.top + yScaleH(d.y)}`)
       .join(" L");
 
+  // Áreas bajo cada línea ( degradado → eje )
+  const lastX = margin.left + xScale(weightData.length - 1);
+  const areaW = `${pathW} L${lastX},${bottomY} L${margin.left},${bottomY} Z`;
+  const areaH = `${pathH} L${lastX},${bottomY} L${margin.left},${bottomY} Z`;
+
   // Tooltip del punto bajo el cursor (coordenadas SVG) — después de las escalas
   const hoverPoint = hover
     ? {
@@ -97,6 +114,9 @@ export default function GrowthChart({ records }: GrowthChartProps) {
       }
     : null;
 
+  const lastW = weightData[weightData.length - 1];
+  const lastH = heightData[heightData.length - 1];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -111,6 +131,17 @@ export default function GrowthChart({ records }: GrowthChartProps) {
         viewBox={`0 0 ${width} ${height}`}
         className="w-full h-auto"
       >
+        <defs>
+          <linearGradient id="areaW" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--color-dusty-rose)" stopOpacity="0.30" />
+            <stop offset="100%" stopColor="var(--color-dusty-rose)" stopOpacity="0.02" />
+          </linearGradient>
+          <linearGradient id="areaH" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--color-sky-soft)" stopOpacity="0.30" />
+            <stop offset="100%" stopColor="var(--color-sky-soft)" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+
         {/* Grid lines */}
         {[0, 1, 2, 3, 4, 5].map((i) => {
           const y = margin.top + (innerHeight / 5) * i;
@@ -200,88 +231,175 @@ export default function GrowthChart({ records }: GrowthChartProps) {
           Estatura (cm)
         </text>
 
-        {/* Weight line (animated) */}
-        <motion.path
-          d={pathW}
-          fill="none"
-          stroke="var(--color-dusty-rose)"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeDasharray="1000"
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={controls}
-          style={{ zIndex: 5 }}
-        />
+        {/* Áreas degradadas bajo las líneas */}
+        <AnimatePresence>
+          {showW && (
+            <motion.path
+              key="areaW"
+              d={areaW}
+              fill="url(#areaW)"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+            />
+          )}
+          {showH && (
+            <motion.path
+              key="areaH"
+              d={areaH}
+              fill="url(#areaH)"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+            />
+          )}
+        </AnimatePresence>
 
-        {/* Height line (animated) */}
-        <motion.path
-          d={pathH}
-          fill="none"
-          stroke="var(--color-sky-soft)"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeDasharray="1000"
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={controls}
-          transition={{ duration: 2, delay: 0.3, ease: "easeOut" }}
-          style={{ zIndex: 4 }}
-        />
+        {/* Weight line (animated) + halo */}
+        {showW && (
+          <>
+            <motion.path
+              d={pathW}
+              fill="none"
+              stroke="var(--color-dusty-rose)"
+              strokeWidth="6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity="0.15"
+              initial={{ pathLength: 0 }}
+              animate={controls}
+            />
+            <motion.path
+              d={pathW}
+              fill="none"
+              stroke="var(--color-dusty-rose)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={controls}
+              style={{ zIndex: 5 }}
+            />
+          </>
+        )}
+
+        {/* Height line (animated) + halo */}
+        {showH && (
+          <>
+            <motion.path
+              d={pathH}
+              fill="none"
+              stroke="var(--color-sky-soft)"
+              strokeWidth="6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity="0.15"
+              initial={{ pathLength: 0 }}
+              animate={controls}
+              transition={{ duration: 2, delay: 0.3, ease: "easeOut" }}
+            />
+            <motion.path
+              d={pathH}
+              fill="none"
+              stroke="var(--color-sky-soft)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={controls}
+              transition={{ duration: 2, delay: 0.3, ease: "easeOut" }}
+              style={{ zIndex: 4 }}
+            />
+          </>
+        )}
 
         {/* Weight points (interactivos: hover → tooltip) */}
-        {weightData.map((d, i) => (
-          <g key={`w-${i}`}>
-            <circle
-              cx={margin.left + xScale(i)}
-              cy={margin.top + yScaleW(d.y)}
-              r="12"
-              fill="transparent"
-              style={{ cursor: "pointer" }}
-              onMouseEnter={() => setHover({ s: "w", i })}
-              onMouseLeave={() => setHover(null)}
-            />
-            <motion.circle
-              cx={margin.left + xScale(i)}
-              cy={margin.top + yScaleW(d.y)}
-              r={hover?.s === "w" && hover?.i === i ? 5.5 : 3}
-              fill="var(--color-dusty-rose)"
-              stroke="#fff"
-              strokeWidth={hover?.s === "w" && hover?.i === i ? 2 : 0}
-              style={{ transition: "r 0.15s ease", pointerEvents: "none" }}
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.3 + i * 0.1, duration: 0.3 }}
-            />
-          </g>
-        ))}
+        {showW &&
+          weightData.map((d, i) => (
+            <g key={`w-${i}`}>
+              <circle
+                cx={margin.left + xScale(i)}
+                cy={margin.top + yScaleW(d.y)}
+                r="12"
+                fill="transparent"
+                style={{ cursor: "pointer" }}
+                onMouseEnter={() => setHover({ s: "w", i })}
+                onMouseLeave={() => setHover(null)}
+              />
+              <motion.circle
+                cx={margin.left + xScale(i)}
+                cy={margin.top + yScaleW(d.y)}
+                r={hover?.s === "w" && hover?.i === i ? 5.5 : 3.5}
+                fill="var(--color-dusty-rose)"
+                stroke="#fff"
+                strokeWidth={hover?.s === "w" && hover?.i === i ? 2 : 1}
+                style={{ transition: "r 0.15s ease", pointerEvents: "none" }}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.3 + i * 0.1, duration: 0.3 }}
+              />
+            </g>
+          ))}
 
         {/* Height points (interactivos: hover → tooltip) */}
-        {heightData.map((d, i) => (
-          <g key={`h-${i}`}>
-            <circle
-              cx={margin.left + xScale(i)}
-              cy={margin.top + yScaleH(d.y)}
-              r="12"
-              fill="transparent"
-              style={{ cursor: "pointer" }}
-              onMouseEnter={() => setHover({ s: "h", i })}
-              onMouseLeave={() => setHover(null)}
-            />
-            <motion.circle
-              cx={margin.left + xScale(i)}
-              cy={margin.top + yScaleH(d.y)}
-              r={hover?.s === "h" && hover?.i === i ? 5.5 : 3}
-              fill="var(--color-sky-soft)"
-              stroke="#fff"
-              strokeWidth={hover?.s === "h" && hover?.i === i ? 2 : 0}
-              style={{ transition: "r 0.15s ease", pointerEvents: "none" }}
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.4 + i * 0.1, duration: 0.3 }}
-            />
-          </g>
-        ))}
+        {showH &&
+          heightData.map((d, i) => (
+            <g key={`h-${i}`}>
+              <circle
+                cx={margin.left + xScale(i)}
+                cy={margin.top + yScaleH(d.y)}
+                r="12"
+                fill="transparent"
+                style={{ cursor: "pointer" }}
+                onMouseEnter={() => setHover({ s: "h", i })}
+                onMouseLeave={() => setHover(null)}
+              />
+              <motion.circle
+                cx={margin.left + xScale(i)}
+                cy={margin.top + yScaleH(d.y)}
+                r={hover?.s === "h" && hover?.i === i ? 5.5 : 3.5}
+                fill="var(--color-sky-soft)"
+                stroke="#fff"
+                strokeWidth={hover?.s === "h" && hover?.i === i ? 2 : 1}
+                style={{ transition: "r 0.15s ease", pointerEvents: "none" }}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.4 + i * 0.1, duration: 0.3 }}
+              />
+            </g>
+          ))}
+
+        {/* Pulso en el último control de cada serie visible */}
+        {showW && lastW && (
+          <circle
+            cx={margin.left + xScale(weightData.length - 1)}
+            cy={margin.top + yScaleW(lastW.y)}
+            r="9"
+            fill="none"
+            stroke="var(--color-dusty-rose)"
+            strokeWidth="1.5"
+            style={{ pointerEvents: "none" }}
+          >
+            <animate attributeName="opacity" values="0.7;0.1;0.7" dur="2s" repeatCount="indefinite" />
+            <animate attributeName="r" values="7;11;7" dur="2s" repeatCount="indefinite" />
+          </circle>
+        )}
+        {showH && lastH && (
+          <circle
+            cx={margin.left + xScale(heightData.length - 1)}
+            cy={margin.top + yScaleH(lastH.y)}
+            r="9"
+            fill="none"
+            stroke="var(--color-sky-soft)"
+            strokeWidth="1.5"
+            style={{ pointerEvents: "none" }}
+          >
+            <animate attributeName="opacity" values="0.7;0.1;0.7" dur="2s" repeatCount="indefinite" />
+            <animate attributeName="r" values="7;11;7" dur="2s" repeatCount="indefinite" />
+          </circle>
+        )}
 
         {/* Tooltip flotante del punto activo */}
         {hoverPoint && (
@@ -334,16 +452,30 @@ export default function GrowthChart({ records }: GrowthChartProps) {
         )}
       </svg>
 
-      {/* Legend */}
-      <div className="mt-4 flex justify-center gap-6 text-xs text-mist-gray">
-        <span className="flex items-center gap-1.5">
+      {/* Legend interactiva: clic para prender/apagar series */}
+      <div className="mt-4 flex justify-center gap-3 text-xs">
+        <button
+          onClick={() => setShowW((v) => !v)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-200 cursor-pointer ${
+            showW
+              ? "border-dusty-rose/40 bg-dusty-rose/10 text-taupe"
+              : "border-mist-gray/20 text-mist-gray opacity-60"
+          }`}
+        >
           <span className="w-3 h-3 bg-dusty-rose rounded-full" />
           Peso (kg)
-        </span>
-        <span className="flex items-center gap-1.5">
+        </button>
+        <button
+          onClick={() => setShowH((v) => !v)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-200 cursor-pointer ${
+            showH
+              ? "border-sky-soft/50 bg-sky-soft/10 text-taupe"
+              : "border-mist-gray/20 text-mist-gray opacity-60"
+          }`}
+        >
           <span className="w-3 h-3 bg-sky-soft rounded-full" />
           Estatura (cm)
-        </span>
+        </button>
       </div>
     </motion.div>
   );
