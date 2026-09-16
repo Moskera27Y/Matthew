@@ -1,9 +1,9 @@
 // src/app/admin/milestones/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Edit, Trash2, Save, X } from "lucide-react";
+import { Plus, Edit, Trash2, Save, X, Upload, Star } from "lucide-react";
 import { loadMilestones, saveMilestones, deleteItem } from "@/services/adminService";
 import { MILESTONES } from "@/data/milestones";
 import { Milestone } from "@/types/milestone";
@@ -11,6 +11,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import { formatDateES, babyAgeForDate } from "@/lib/utils";
+import { prepareUploadImage } from "@/lib/image";
 import { BIRTH_DATE } from "@/lib/constants";
 
 export default function AdminMilestones() {
@@ -67,9 +68,48 @@ export default function AdminMilestones() {
 
   const MilestoneForm = ({ milestone }: { milestone: Milestone }) => {
     const [data, setData] = useState(milestone);
+    const [uploading, setUploading] = useState(false);
+    const fileRef = useRef<HTMLInputElement>(null);
 
     const handleChange = (field: keyof Milestone, value: string) => {
       setData({ ...data, [field]: value });
+    };
+
+    // Subir foto del recuerdo a Blob (comprimida) y agregarla a images[0..n].
+    // La primera es la portada que se ve en la polaroid del muro.
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      setUploading(true);
+      try {
+        const up = await prepareUploadImage(file);
+        const form = new FormData();
+        form.append("file", up.blob, up.name);
+        form.append("alt", data.title || "Recuerdo de Matthew");
+        form.append("caption", data.title || "");
+        form.append("category", "family");
+        const res = await fetch("/api/upload", { method: "POST", body: form });
+        const text = await res.text();
+        let payload: any = {};
+        if (text) try { payload = JSON.parse(text); } catch { /* empty */ }
+        if (!res.ok) throw new Error(payload?.error || `upload falló (${res.status})`);
+        const url = payload.url || payload.src;
+        if (!url) throw new Error("upload OK pero no se recibió URL");
+        setData({ ...data, images: [...(data.images || []), url] });
+      } catch (err: any) {
+        alert("No se pudo subir la foto: " + (err?.message || "error"));
+      } finally {
+        setUploading(false);
+        e.target.value = "";
+      }
+    };
+
+    const removeImage = (url: string) => {
+      setData({ ...data, images: (data.images || []).filter((u) => u !== url) });
+    };
+
+    const setCover = (url: string) => {
+      setData({ ...data, images: [url, ...(data.images || []).filter((u) => u !== url)] });
     };
 
     const handleSave = () => {
@@ -128,6 +168,60 @@ export default function AdminMilestones() {
               <option value="food">Comida</option>
               <option value="family">Familia</option>
             </select>
+          </div>
+          {/* Fotos del recuerdo: la primera es la portada de la polaroid */}
+          <div>
+            <label className="text-xs text-mist-gray">
+              Fotos del recuerdo ({(data.images || []).length})
+            </label>
+            {(data.images || []).length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-1.5 mb-2">
+                {(data.images || []).map((url, i) => (
+                  <div key={url + i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-mist-gray/20 group">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                    {i === 0 && (
+                      <span className="absolute top-0.5 left-0.5 flex items-center gap-0.5 bg-black/55 text-white text-[9px] px-1 py-px rounded">
+                        <Star size={8} fill="currentColor" /> Portada
+                      </span>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 flex justify-center gap-1 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity py-0.5">
+                      {i !== 0 && (
+                        <button
+                          title="Poner como portada"
+                          onClick={() => setCover(url)}
+                          className="text-white hover:text-amber-300"
+                        >
+                          <Star size={11} />
+                        </button>
+                      )}
+                      <button
+                        title="Quitar foto"
+                        onClick={() => removeImage(url)}
+                        className="text-white hover:text-red-300"
+                      >
+                        <X size={11} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => fileRef.current?.click()}
+            >
+              <Upload size={14} className="mr-1" />
+              {uploading ? "Subiendo..." : "Agregar foto"}
+            </Button>
           </div>
         </div>
 
@@ -204,7 +298,9 @@ export default function AdminMilestones() {
                           </p>
                           <p className="text-xs text-mist-gray">
                             📅 {formatDateES(milestone.date)} •👶{" "}
-                            {milestone.babyAge?.days ?? "—"}d
+                            {milestone.babyAge?.days ?? "—"}d • 📷{" "}
+                            {(milestone.images || []).length}{" "}
+                            {(milestone.images || []).length === 1 ? "foto" : "fotos"}
                           </p>
                         </div>
                         <div className="flex gap-1 ml-4">
